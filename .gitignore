@@ -1,0 +1,10 @@
+*.log
+*.sh
+*.tar
+*.pkl
+*.npy
+*.txt
+*.tmp
+config.py
+log/*
+__pycache__/*
