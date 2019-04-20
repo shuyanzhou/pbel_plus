@@ -9,10 +9,10 @@ import random
 import panphon as pp
 from  torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import pickle
-from mention_matching.pbel.base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
-from mention_matching.pbel.base_test import init_test, eval_dataset
-from mention_matching.pbel.config import argps
-from mention_matching.pbel.similarity_calculator import Similarity
+from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
+from base_test import init_test, eval_dataset
+from config import argps
+from similarity_calculator import Similarity
 
 
 
@@ -43,6 +43,13 @@ class Batch(BaseBatch):
         self.mega_flag = True
         self.negative_num = 1
 
+    def set_mid(self, mid_tensor, mid_lens, mid_perm_idx, mid_kb_ids):
+        self.mid_tensor = mid_tensor
+        self.mid_lens = mid_lens
+        self.mid_perm_idx = mid_perm_idx
+        self.mid_kb_ids = mid_kb_ids
+        self.mid_flag = True
+
     def to(self, device):
         if self.src_flag:
             self.src_tensor = self.src_tensor.to(device)
@@ -56,6 +63,10 @@ class Batch(BaseBatch):
             self.mega_tensor = self.mega_tensor.to(device)
             self.mega_lens = self.mega_lens.to(device)
             self.mega_perm_idx = self.mega_perm_idx.to(device)
+        if self.mid_flag:
+            self.mid_tensor = self.mid_tensor.to(device)
+            self.mid_lens = self.mid_lens.to(device)
+            self.mid_perm_idx = self.mid_perm_idx.to(device)
 
     def get_all(self):
         return  self.src_tensor, self.src_lens, self.src_perm_idx, \
@@ -66,24 +77,24 @@ class Batch(BaseBatch):
     def get_trg(self):
         return self.trg_tensor, self.trg_lens, self.trg_perm_idx
 
+    def get_mid(self):
+        return self.mid_tensor, self.mid_lens, self.mid_perm_idx
+
     def get_mega(self):
         return self.mega_tensor, self.mega_lens, self.mega_perm_idx
 
 
 
 class DataLoader(BaseDataLoader):
-    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, train_file=None, dev_file=None, test_file=None):
-        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, "<UNK>", train_file, dev_file, test_file)
+    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, train_file=None, dev_file=None, test_file=None):
+        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
+                                        "<UNK>", train_file, dev_file, test_file)
 
     def new_batch(self):
         return Batch()
 
-    def load_data(self, file_name, str_idx, id_idx, is_src):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map):
         line_tot = 0
-        if is_src:
-            x2i_map = self.x2i_src
-        else:
-            x2i_map = self.x2i_trg
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
                 line_tot += 1
@@ -110,7 +121,8 @@ class DataLoader(BaseDataLoader):
 
 
 class LSTMEncoder(Encoder):
-    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure:Similarity):
+    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure:Similarity,
+                 use_mid, share_vocab, mid_vocab_size=0):
         super(LSTMEncoder, self).__init__()
         self.similarity_measure = similarity_measure
         self.src_vocab_size = src_vocab_size
@@ -118,6 +130,9 @@ class LSTMEncoder(Encoder):
         self.embed_size = embed_size
         self.hidden_size = hidden_size
         self.bilinear = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        self.use_mid = use_mid
+        self.share_vocab = share_vocab
+        self.mid_vocab_size=mid_vocab_size
         torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
         if not use_panphon:
             self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
@@ -130,27 +145,43 @@ class LSTMEncoder(Encoder):
             self.use_panphon = True
             self.src_lookup = None
             self.trg_lookup = None
+
         self.src_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
         self.trg_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
+
+        if use_mid:
+            if share_vocab:
+                self.mid_lookup = self.src_lookup
+                self.mid_lstm = self.src_lstm
+            else:
+                self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
+                self.mid_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
+                torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
+            self.bilinear_mid = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+            torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
 
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
-    def calc_encode(self, batch, is_src, is_mega=False):
+    def calc_encode(self, batch, is_src, is_mega=False, is_mid=False):
         # input: [len, batch] or [len, batch, pp_vec_size]
         # embed: [len, batch, embed_size]
-        if is_src:
-            lookup = self.src_lookup
-            lstm = self.src_lstm
-            input, input_lens, perm_idx = batch.get_src()
+        if is_mid:
+            lookup = self.mid_lookup
+            lstm = self.mid_lstm
+            input, input_lens, perm_idx = batch.get_mid()
         else:
-            lookup = self.trg_lookup
-            lstm = self.trg_lstm
-            input, input_lens, perm_idx = batch.get_trg()
-
-        #overwrite
-        if is_mega:
-            input, input_lens, perm_idx = batch.get_mega()
+            if is_src:
+                lookup = self.src_lookup
+                lstm = self.src_lstm
+                input, input_lens, perm_idx = batch.get_src()
+            else:
+                lookup = self.trg_lookup
+                lstm = self.trg_lstm
+                if is_mega:
+                    input, input_lens, perm_idx = batch.get_mega()
+                else:
+                    input, input_lens, perm_idx = batch.get_trg()
 
         if not self.use_panphon:
             embeds = lookup(input)
@@ -177,6 +208,7 @@ def save_model(model:LSTMEncoder, optimizer, model_path):
                 "optimizer_statte_dict": optimizer.state_dict(),
                 "src_vocab_size": model.src_vocab_size,
                 "trg_vocab_size": model.trg_vocab_size,
+                "mid_vocab_size": model.mid_vocab_size,
                 "embed_size": model.embed_size,
                 "hidden_size": model.hidden_size,
                 "similarity_measure": model.similarity_measure.method}, model_path)
@@ -188,7 +220,8 @@ if __name__ == "__main__":
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
         model = LSTMEncoder(data_loader.src_vocab_size, data_loader.trg_vocab_size,
                     args.embed_size, args.hidden_size, args.use_panphon,
-                    similarity_measure)
+                    similarity_measure,
+                    args.use_mid, args.share_vocab, data_loader.mid_vocab_size)
         optimizer = create_optimizer(args.trainer, args.learning_rate, model)
         run(data_loader, model, criterion, optimizer, similarity_measure, save_model, args)
     else:
@@ -198,7 +231,10 @@ if __name__ == "__main__":
         model = LSTMEncoder(model_info["src_vocab_size"], model_info["trg_vocab_size"],
                         args.embed_size, args.hidden_size,
                         use_panphon=args.use_panphon,
-                        similarity_measure=similarity_measure)
+                        similarity_measure=similarity_measure,
+                        use_mid=args.use_mid,
+                        share_vocab=args.share_vocab,
+                        mid_vocab_size=model_info.get("mid_vocab_size", 0))
 
         model.load_state_dict(model_info["model_state_dict"])
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,

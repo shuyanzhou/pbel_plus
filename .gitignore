@@ -5,6 +5,6 @@
 *.npy
 *.txt
 *.tmp
-config.py
 log/*
 __pycache__/*
+data/*

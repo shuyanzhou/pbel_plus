@@ -6,8 +6,9 @@ import sys
 sys.path.append("/home/shuyanzh/workshop/cmu_lorelei_edl/")
 import numpy as np
 import time
-from mention_matching.pbel.base_train import BaseDataLoader, Encoder, FileInfo
-from mention_matching.pbel.similarity_calculator import Similarity
+from base_train import BaseDataLoader, Encoder, FileInfo
+from similarity_calculator import Similarity
+from typing import List
 
 PP_VEC_SIZE = 22
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -66,9 +67,11 @@ def close_file_list(file_list):
 def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, test_data_plain:list,
                 kb_encodings:np.ndarray, kb_ids:np.ndarray, kb_entity_string:list,
                 intermediate_info:dict,
-                method, similarity_calculator: Similarity, bilinear_tensor: torch.Tensor, save_files:dict, topk_list = (1, 2, 5, 10, 30),
+                method, similarity_calculator: Similarity, bilinear_tensors: List[torch.Tensor], save_files:dict, topk_list = (1, 2, 5, 10, 30),
                 record_recall=False):
     pieces=500
+    bilinear_src_trg = bilinear_tensors[0]
+    bilinear_src_mid = bilinear_tensors[1]
     # no pivoting, base method
     tot = float(test_data_encodings.shape[0])
     # base method
@@ -76,7 +79,7 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
     base_result_file = open(save_files["no_pivot"], "w+", encoding="utf-8")
     base_result_string_file = open(save_files["no_pivot_str"], "w+", encoding="utf-8")
     base_files = [base_result_file, base_result_string_file]
-    base_scores = similarity_calculator(test_data_encodings, kb_encodings, bilinear_tensor, split=True, pieces=pieces, negative_sample=None)
+    base_scores = similarity_calculator(test_data_encodings, kb_encodings, bilinear_src_trg, split=True, pieces=pieces, negative_sample=None)
     calc_scores(base_scores, test_data_plain, test_gold_kb_ids, kb_ids, kb_entity_string, base_files, record_recall, base_recall, topk_list)
 
     for topk, recall in base_recall.items():
@@ -95,7 +98,7 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
         pivot_result_string_file = open(save_files["pivot_str"], "w+", encoding="utf-8")
         pivot_files = [pivot_result_file, pivot_result_string_file]
 
-        pivot_scores = similarity_calculator(test_data_encodings, pivot_encodings, bilinear_tensor, split=True, pieces=pieces, negative_sample=None)
+        pivot_scores = similarity_calculator(test_data_encodings, pivot_encodings, bilinear_src_mid, split=True, pieces=pieces, negative_sample=None)
         combined_scores = np.hstack([base_scores, pivot_scores])
         calc_scores(combined_scores, test_data_plain, test_gold_kb_ids, pivot_kb_ids, pivot_kb_entity_string, pivot_files, record_recall, pivot_recall, topk_list)
 
@@ -116,16 +119,16 @@ def get_kb_id(fname, str_idx, id_idx):
     gold_kb_id = np.array(gold_kb_id)
     return gold_kb_id, plain_text
 
-def get_encodings(model: Encoder, data_loader: BaseDataLoader, load_encoding: bool, save_file, is_src):
+def get_encodings(model: Encoder, data_loader: BaseDataLoader, load_encoding: bool, save_file, is_src, is_mid):
     if not load_encoding:
-        batches = data_loader.create_batches("test", is_src)
+        batches = data_loader.create_batches("test", is_src=is_src, is_mid=is_mid)
         # encodings = np.empty((0, encoder.hidden_size*2))
         encodings = []
         start_time = time.time()
         for idx, batch in enumerate(batches):
             if (idx + 1) % 10000 == 0:
                 print("[INFO] process {} batches, using {:.2f} seconds".format(idx + 1, time.time() - start_time))
-            encodings.append(np.array(model.calc_encode(batch, is_src).cpu()))
+            encodings.append(np.array(model.calc_encode(batch, is_src=is_src, is_mid=is_mid).cpu()))
 
         # encoding = [batch_num, batch_size, hidden_state * 2]
         encodings = list2nparr(encodings, model.hidden_size)
@@ -138,14 +141,19 @@ def get_encodings(model: Encoder, data_loader: BaseDataLoader, load_encoding: bo
         print("[INFO] load test encodings!")
         print(encodings.shape)
 
-    if is_src:
-        kb_ids, data_plain = get_kb_id(data_loader.test_file.src_file_name,
-                                       data_loader.test_file.src_str_idx,
-                                       data_loader.test_file.src_id_idx)
+    if is_mid:
+        kb_ids, data_plain = get_kb_id(data_loader.test_file.mid_file_name,
+                                       data_loader.test_file.mid_str_idx,
+                                       data_loader.test_file.mid_id_idx)
     else:
-        kb_ids, data_plain = get_kb_id(data_loader.test_file.trg_file_name,
-                                       data_loader.test_file.trg_str_idx,
-                                       data_loader.test_file.trg_id_idx)
+        if is_src:
+            kb_ids, data_plain = get_kb_id(data_loader.test_file.src_file_name,
+                                           data_loader.test_file.src_str_idx,
+                                           data_loader.test_file.src_id_idx)
+        else:
+            kb_ids, data_plain = get_kb_id(data_loader.test_file.trg_file_name,
+                                           data_loader.test_file.trg_str_idx,
+                                           data_loader.test_file.trg_id_idx)
 
     assert kb_ids.shape[0] == encodings.shape[0] \
            and len(data_plain) == encodings.shape[0], \
@@ -166,8 +174,8 @@ def eval_dataset(model:Encoder, similarity_calculator: Similarity,
     with torch.no_grad():
         model.eval()
         model.to(device)
-        encoded_test, test_gold_kb_id, test_data_plain = get_encodings(model, base_data_loader, load_encoded_test, encoded_test_file, is_src=True)
-        encoded_kb, kb_ids, kb_entity_string = get_encodings(model, base_data_loader, load_encoded_kb, encoded_kb_file, is_src=False)
+        encoded_test, test_gold_kb_id, test_data_plain = get_encodings(model, base_data_loader, load_encoded_test, encoded_test_file, is_src=True, is_mid=False)
+        encoded_kb, kb_ids, kb_entity_string = get_encodings(model, base_data_loader, load_encoded_kb, encoded_kb_file, is_src=False, is_mid=False)
         intermediate_info = {}
         if method != "base":
             intermediate_encodings = {}
@@ -175,8 +183,8 @@ def eval_dataset(model:Encoder, similarity_calculator: Similarity,
             intermediate_plain_text = {}
             for stuff in intermediate_stuff:
                 # name is used to present the contain of this intermediate stuff
-                name, data_loader, encoded_file, load_encoded, is_src = stuff
-                encoded_stuff, gold_kb_id, plain_text = get_encodings(model, data_loader, load_encoded, encoded_file, is_src=is_src)
+                name, data_loader, encoded_file, load_encoded, is_src, is_mid = stuff
+                encoded_stuff, gold_kb_id, plain_text = get_encodings(model, data_loader, load_encoded, encoded_file, is_src=is_src, is_mid=is_mid)
                 intermediate_encodings[name] = encoded_stuff
                 intermediate_kb_id[name] = gold_kb_id
                 intermediate_plain_text[name] = plain_text
@@ -186,7 +194,7 @@ def eval_dataset(model:Encoder, similarity_calculator: Similarity,
         start_time = time.time()
         calc_result(encoded_test, test_gold_kb_id, test_data_plain,
                     encoded_kb, kb_ids, kb_entity_string,
-                    intermediate_info, method, similarity_calculator, model.bilinear, result_files, record_recall=record_recall)
+                    intermediate_info, method, similarity_calculator, [model.bilinear, model.bilinear_mid], result_files, record_recall=record_recall)
 
         print("[INFO] take {:.4f}s to calculate similarity".format(time.time() - start_time))
 
@@ -195,19 +203,25 @@ def init_test(args, DataLoader):
     test_file = FileInfo()
     test_file.set_src(args.test_file, args.test_str_idx, args.test_id_idx)
     test_file.set_trg(args.kb_file, args.kb_str_idx, args.kb_id_idx)
-    base_data_loader = DataLoader(False, args.map_file, args.batch_size, args.mega_size, args.use_panphon, test_file=test_file)
+    base_data_loader = DataLoader(False, args.map_file, args.batch_size, args.mega_size,
+                                  args.use_panphon, args.use_mid, args.share_vocab,
+                                  test_file=test_file)
     intermediate_stuff = []
     if args.method != "base":
         for stuff in args.intermediate_stuff:
-            name, file_name, str_idx, id_idx, encoded_file, load_encoded, is_src = stuff
+            name, file_name, str_idx, id_idx, encoded_file, load_encoded, is_src, is_mid = stuff
             inter_file = FileInfo()
-            if is_src:
-                inter_file.set_src(file_name, str_idx, id_idx)
+            if is_mid:
+                inter_file.set_mid(file_name, str_idx, id_idx)
             else:
-                inter_file.set_trg(file_name, str_idx, id_idx)
-            inter_data_loader = DataLoader(False, args.map_file, args.batch_size, args.mega_size, args.use_panphon,
+                if is_src:
+                    inter_file.set_src(file_name, str_idx, id_idx)
+                else:
+                    inter_file.set_trg(file_name, str_idx, id_idx)
+            inter_data_loader = DataLoader(False, args.map_file, args.batch_size, args.mega_size,
+                                           args.use_panphon, args.use_mid, args.share_vocab,
                                            test_file=inter_file)
-            intermediate_stuff.append((name, inter_data_loader, encoded_file, load_encoded, is_src))
+            intermediate_stuff.append((name, inter_data_loader, encoded_file, load_encoded, is_src, is_mid))
 
     return base_data_loader, intermediate_stuff
 

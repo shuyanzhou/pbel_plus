@@ -9,10 +9,10 @@ import random
 import panphon as pp
 from  torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import pickle
-from mention_matching.pbel.base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
-from mention_matching.pbel.base_test import init_test, eval_dataset
-from mention_matching.pbel.config import argps
-from mention_matching.pbel.similarity_calculator import Similarity
+from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
+from base_test import init_test, eval_dataset
+from config import argps
+from similarity_calculator import Similarity
 
 print = functools.partial(print, flush=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -49,6 +49,12 @@ class Batch(BaseBatch):
         self.mega_flag = True
         self.negative_num = 1
 
+    def set_mid(self, mid_tensor, mid_mask, mid_kb_ids):
+        self.mid_tensor = mid_tensor.long()
+        self.mid_mask = mid_mask
+        self.mid_kb_ids= mid_mask
+        self.mid_flag = True
+
     def to(self, device):
         if self.src_flag:
             self.src_tensor = self.src_tensor.to(device)
@@ -59,6 +65,9 @@ class Batch(BaseBatch):
         if self.mega_flag:
             self.mega_tensor = self.mega_tensor.to(device)
             self.mega_mask = self.mega_mask.to(device)
+        if self.mid_flag:
+            self.mid_tensor = self.mid_tensor.to(device)
+            self.mid_mask = self.mid_mask.to(device)
 
     def get_all(self):
         return  self.src_tensor, self.src_mask, \
@@ -73,19 +82,20 @@ class Batch(BaseBatch):
     def get_mega(self):
         return self.mega_tensor, self.mega_mask
 
+    def get_mid(self):
+        return self.mid_tensor, self.mid_mask
+
 
 class DataLoader(BaseDataLoader):
-    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, train_file=None, dev_file=None, test_file=None):
-        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, "<pad>", train_file, dev_file, test_file)
+    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
+                 train_file=None, dev_file=None, test_file=None):
+        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
+                                        "<pad>", train_file, dev_file, test_file)
 
     def new_batch(self):
         return Batch()
 
-    def load_data(self, file_name, str_idx, id_idx, is_src):
-        if is_src:
-            x2i_map = self.x2i_src
-        else:
-            x2i_map = self.x2i_trg
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
@@ -107,16 +117,20 @@ class DataLoader(BaseDataLoader):
         return [data_tensor, mask]
     
 class Charagram(Encoder):
-    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure):
+    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure, use_mid, share_vocab, mid_vocab_size=0):
         super(Charagram, self).__init__()
         self.src_vocab_size = src_vocab_size
         self.trg_vocab_size = trg_vocab_size
+        self.mid_vocab_size = mid_vocab_size
+        self.use_mid = use_mid
+        self.share_vocab = share_vocab
         self.hidden_size = embed_size
         self.embed_size = embed_size
         # parameters
         self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
         self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
-        self.bias = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
+        self.bias_src = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
+        self.bias_trg = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
 
         self.activate = torch.tanh
         self.similarity_measure = similarity_measure
@@ -124,29 +138,53 @@ class Charagram(Encoder):
 
         torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
         torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
-        torch.nn.init.xavier_uniform_(self.bias, gain=1)
+        torch.nn.init.xavier_uniform_(self.bias_src, gain=1)
+        torch.nn.init.xavier_uniform_(self.bias_trg, gain=1)
         torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
+
+        if use_mid:
+            if share_vocab:
+                self.mid_lookup = self.src_lookup
+                self.bias_mid = self.bias_src
+            else:
+                self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
+                torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
+                self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
+                torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
+
+            self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+            torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
-    def calc_encode(self, batch: Batch, is_src, is_mega=False):
+    def calc_encode(self, batch: Batch, is_src, is_mega=False, is_mid=False):
         # input: [len, batch] or [len, batch, pp_vec_size]
         # embed: [len, batch, embed_size]
-        if is_src:
-            lookup = self.src_lookup
-            input, mask = batch.get_src()
-        else:
-            lookup = self.trg_lookup
-            input, mask = batch.get_trg()
 
-        if is_mega:
-            input, mask = batch.get_mega()
+        if is_mid:
+            lookup = self.mid_lookup
+            bias = self.bias_mid
+            input, mask = batch.get_mid()
+        else:
+            if is_src:
+                lookup = self.src_lookup
+                bias = self.bias_src
+                input, mask = batch.get_src()
+            else:
+                lookup = self.trg_lookup
+                if is_mega:
+                    bias = self.bias_trg
+                    input, mask = batch.get_mega()
+                else:
+                    bias = self.bias_trg
+                    input, mask = batch.get_trg()
+
         # [batch_size, max_len, embed_size]
         embed = lookup(input)
         # mask padding
         embed = embed.masked_fill(mask==0, 0)
         # [batch_size, embed_size]
-        encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + self.bias)
+        encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
         return encoded
 
 def save_model(model:Charagram, optimizer, model_path):
@@ -154,6 +192,7 @@ def save_model(model:Charagram, optimizer, model_path):
                 "optimizer_statte_dict": optimizer.state_dict(),
                 "src_vocab_size": model.src_vocab_size,
                 "trg_vocab_size": model.trg_vocab_size,
+                "mid_vocab_size": model.mid_vocab_size,
                 "embed_size": model.embed_size,
                 "similarity_measure": model.similarity_measure.method}, model_path)
     print("[INFO] save model!")
@@ -163,7 +202,7 @@ if __name__ == "__main__":
     if args.is_train:
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
         model = Charagram(data_loader.src_vocab_size, data_loader.trg_vocab_size,
-                    args.embed_size, similarity_measure)
+                    args.embed_size, similarity_measure, args.use_mid, args.share_vocab, data_loader.mid_vocab_size)
         optimizer = create_optimizer(args.trainer, args.learning_rate, model)
         run(data_loader, model, criterion, optimizer, similarity_measure, save_model, args)
     else:
@@ -172,7 +211,10 @@ if __name__ == "__main__":
         similarity_measure = Similarity(args.similarity_measure)
         model = Charagram(model_info["src_vocab_size"], model_info["trg_vocab_size"],
                         model_info["embed_size"],
-                        similarity_measure=similarity_measure)
+                        similarity_measure=similarity_measure,
+                        use_mid=args.use_mid,
+                        share_vocab=args.share_vocab,
+                        mid_vocab_size=model_info.get("mid_vocab_size", 0))
 
         model.load_state_dict(model_info["model_state_dict"])
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
