@@ -450,6 +450,53 @@ def save_mention_entity_string(me_file, new_me_file, title_id_file):
             el_str = [x for x in el_str if x != "<unk>"]
             f.write("{} ||| {}\n".format(m, " || ".join(el_str)))
 
+def remove_star_symbol(fname):
+    with open(fname, "r", encoding="utf-8") as f:
+        with open(fname + ".remove", "w+", encoding="utf-8") as fout:
+            for line in f:
+                tks = line.strip().split()
+                if tks[-1] == "*":
+                    continue
+                else:
+                    fout.write(line)
+    os.rename(fname + ".remove", fname)
+
+def generate_mid_file(link_map, train_file_path, train_file, prefix):
+    error = 0
+    new_file = []
+    with open(os.path.join(train_file_path, prefix + train_file), "r", encoding="utf-8") as f:
+        with open(os.path.join(train_file_path, prefix + train_file + ".mid"), "w+", encoding="utf-8") as fout:
+            for line in f:
+                tks = line.strip().split(" ||| ")
+                try:
+                    tks[1] = link_map[tks[1]]
+                except KeyError:
+                    error += 1
+                    continue
+                fout.write(" ||| ".join(tks)  + "\n")
+                new_file.append(line)
+    with open(os.path.join(train_file_path, prefix + train_file), "w+", encoding="utf-8") as f:
+        for line in new_file:
+            f.write(line)
+    print(error)
+    
+def save_mid_file(link_file, train_file_path, train_file):
+    en_other_map = {}
+    with open(link_file, "r", encoding="utf-8") as f:
+        for line in f:
+            tks = line.strip().split(" ||| ")
+            if len(tks) != 3:
+                continue
+            _, en_str, other_str = tks
+            en_other_map[en_str] = other_str
+    print("[INFO] link map: {:d}".format(len(en_other_map)))
+    generate_mid_file(en_other_map, train_file_path, train_file, "mend_train_")
+    generate_mid_file(en_other_map, train_file_path, train_file, "unique_mend_ee_val_")
+    try:
+        generate_mid_file(en_other_map, train_file_path, train_file, "ee_mend_train_")
+    except FileNotFoundError:
+        print("ee train file not found!")
+        pass
 
 # redirect entities to english and save train dev test
 def redirect_to_en_str(me_file, new_me_file, link_file, en_title_id_file, train_file_path = None, train_file = None):
@@ -512,33 +559,42 @@ if __name__ == "__main__":
     lang = sys.argv[1]
     date = sys.argv[2]
     random.seed(1234)
-    json_processor = JsonProcessor("/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_extracted".format(lang),
-                                   "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/anchor_map".format(lang),
-                                   "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/entity_page".format(lang),
-                                   "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/eprior".format(lang),
-                                   "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior".format(lang),
-                                   "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/log".format(lang),
-                                    load_redirect_map=False,
-                                    redirect_file="/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/redirect_bytitle".format(lang),
-                                    wiki_dump="/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/dump_file/{}wiki/{}wiki-{}-pages-articles.xml.bz2".format(lang, lang, date),
-                                    load_title_id=False,
-                                    title_id_file="/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/title_id_map".format(lang),
-                                   )
-    json_processor.main()
-    normalize_smooth_eprior("/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/eprior".format(lang))
-    normalize_meprior("/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior".format(lang))
-
-    me_file = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior".format(lang)
-    me_file_with_str = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior_string".format(lang)
-    me_file_with_en = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior_en_string".format(lang)
-    title_id_file = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/title_id_map".format(lang)
+    # json_processor = JsonProcessor("/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_extracted".format(lang),
+    #                                "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/anchor_map".format(lang),
+    #                                "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/entity_page".format(lang),
+    #                                "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/eprior".format(lang),
+    #                                "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior".format(lang),
+    #                                "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/log".format(lang),
+    #                                 load_redirect_map=False,
+    #                                 redirect_file="/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/redirect_bytitle".format(lang),
+    #                                 wiki_dump="/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/dump_file/{}wiki/{}wiki-{}-pages-articles.xml.bz2".format(lang, lang, date),
+    #                                 load_title_id=False,
+    #                                 title_id_file="/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/title_id_map".format(lang),
+    #                                )
+    # json_processor.main()
+    # normalize_smooth_eprior("/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/eprior".format(lang))
+    # normalize_meprior("/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior".format(lang))
+    #
+    # me_file = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior".format(lang)
+    # me_file_with_str = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior_string".format(lang)
+    # me_file_with_en = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/meprior_en_string".format(lang)
+    # title_id_file = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/{}_results_byid/title_id_map".format(lang)
     en_link_file = "/projects/tir2/users/shuyanzh/lorelei_data/wikipedia/links/en-{}_links".format(lang)
     train_file_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/data/"
-    en_title_id_file = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/kb_split/en_kb"
+    # en_title_id_file = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/kb_split/en_kb"
     train_file = "en-{}_links".format(lang)
-    save_mention_entity_string_frequency(me_file, me_file_with_str, title_id_file)
-    generate_pbel_data(me_file_with_str, me_file_with_en, en_link_file, en_title_id_file, train_file_path, train_file)
-
+    # save_mention_entity_string_frequency(me_file, me_file_with_str, title_id_file)
+    # generate_pbel_data(me_file_with_str, me_file_with_en, en_link_file, en_title_id_file, train_file_path, train_file)
+    # save_mid_file(train_file_path, train_file, language_link)
+    remove_star_symbol(os.path.join(train_file_path, "mend_train_" + train_file))
+    remove_star_symbol(os.path.join(train_file_path, "unique_mend_ee_val_" + train_file))
+    remove_star_symbol(os.path.join(train_file_path, "unique_mend_ee_test_" + train_file))
+    try:
+        remove_star_symbol(os.path.join(train_file_path, "ee_mend_train_" + train_file))
+    except FileNotFoundError:
+        print("no ee mend train file!")
+        pass
+    save_mid_file(en_link_file, train_file_path, train_file)
 
 
 

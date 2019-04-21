@@ -128,19 +128,20 @@ class Charagram(Encoder):
         self.embed_size = embed_size
         # parameters
         self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
+        torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
         self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
+        torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
         self.bias_src = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
+        torch.nn.init.xavier_uniform_(self.bias_src, gain=1)
         self.bias_trg = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
+        torch.nn.init.xavier_uniform_(self.bias_trg, gain=1)
 
         self.activate = torch.tanh
         self.similarity_measure = similarity_measure
-        self.bilinear = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+        # self.bilinear = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+        # torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
+        self.bilinear = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
 
-        torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
-        torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
-        torch.nn.init.xavier_uniform_(self.bias_src, gain=1)
-        torch.nn.init.xavier_uniform_(self.bias_trg, gain=1)
-        torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
 
         if use_mid:
             if share_vocab:
@@ -152,8 +153,9 @@ class Charagram(Encoder):
                 self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
                 torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
 
-            self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
-            torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            # self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+            # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            self.bilinear_mid = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch

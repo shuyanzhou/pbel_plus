@@ -129,11 +129,12 @@ class LSTMEncoder(Encoder):
         self.trg_vocab_size = trg_vocab_size
         self.embed_size = embed_size
         self.hidden_size = hidden_size
-        self.bilinear = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        # self.bilinear = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        # torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
+        self.bilinear = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
         self.use_mid = use_mid
         self.share_vocab = share_vocab
         self.mid_vocab_size=mid_vocab_size
-        torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
         if not use_panphon:
             self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
             self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
@@ -157,8 +158,9 @@ class LSTMEncoder(Encoder):
                 self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
                 self.mid_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
                 torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
-            self.bilinear_mid = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-            torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            # self.bilinear_mid = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+            # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
 
 
     # calc_batch_similarity will return the similarity of the batch
