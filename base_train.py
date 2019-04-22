@@ -115,22 +115,14 @@ class Encoder(nn.Module):
         # calc middle representation
         diff = None
         if use_mid and batch.mid_flag:
-            p = 2/3
+            p = 1/3
             mid_encoded = self.calc_encode(batch, is_src=False, is_mega=False, is_mid=True)
             similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded, self.bilinear_mid, split=False, pieces=0, negative_sample=ns)
-            # # [batch_size, 2]
-            # correct_score = torch.cat((similarity_src_mid[:, 0:1], similarity[:, 0:1]), dim=1)
-            # diff = correct_score[:, 0] - correct_score[:, 1]
-            # # [batch_size, 1]
-            # max_score, _ = torch.max(correct_score, dim=1, keepdim=True)
-            # similarity = torch.cat((max_score, similarity_src_mid[:, 1:], similarity[:, 1:]), dim=1)
-            # diff = similarity_src_mid - similarity
-            # diff = torch.mean(diff * diff)
-            # diff = torch.sqrt(diff)
-            # similarity = torch.max(similarity_src_mid, similarity)
             cur_batch_size =similarity.shape[0]
-            similarity[:int(cur_batch_size * p), :int(cur_batch_size * p)] =\
-                similarity_src_mid[:int(cur_batch_size * p), :int(cur_batch_size * p)]
+            similarity[:, 1:int(cur_batch_size * p)] =\
+                similarity_src_mid[:, 1:int(cur_batch_size * p)]
+            similarity[:int(cur_batch_size * p), 0] = \
+                similarity_src_mid[:int(cur_batch_size * p), 0]
 
         return similarity, diff
 
