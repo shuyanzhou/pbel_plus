@@ -2,11 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6f3e622a-8c50-4801-9d0a-97d4b347d712" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/base_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/base_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/base_train.py" beforeDir="false" afterPath="$PROJECT_DIR$/base_train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_charagram.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_charagram.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_lstm.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_lstm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -15,7 +13,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/pbel$model_lstm.coverage" NAME="model_lstm Coverage Results" MODIFIED="1555800518095" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pbel$model_lstm.coverage" NAME="model_lstm Coverage Results" MODIFIED="1555813958657" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pbel$model_charagram.coverage" NAME="model_charagram Coverage Results" MODIFIED="1555790576394" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="FUSProjectUsageTrigger">
@@ -33,103 +31,48 @@
           <entry key="id" value="2" />
           <entry key="log" value="8" />
           <entry key="mid" value="4" />
-          <entry key="py" value="43" />
-          <entry key="sh" value="1" />
+          <entry key="py" value="52" />
+          <entry key="sh" value="7" />
           <entry key="str" value="5" />
           <entry key="toy" value="4" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Bash" value="1" />
+          <entry key="Bash" value="7" />
           <entry key="Log" value="8" />
           <entry key="PLAIN_TEXT" value="17" />
-          <entry key="Python" value="43" />
+          <entry key="Python" value="52" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="gitignore" value="7" />
           <entry key="mid" value="1" />
-          <entry key="py" value="8672" />
+          <entry key="py" value="9237" />
+          <entry key="sh" value="179" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
+          <entry key="Bash" value="179" />
           <entry key="PLAIN_TEXT" value="8" />
-          <entry key="Python" value="8672" />
+          <entry key="Python" value="9237" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/model_charagram.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1422">
-              <caret line="222" selection-start-line="222" selection-end-line="222" />
-              <folding>
-                <marker date="1555798481578" expanded="true" signature="1727:1873" ph="..." />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/base_test.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="389">
-              <caret line="220" selection-start-line="220" selection-end-line="220" />
-              <folding>
-                <element signature="e#0#35#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/model_lstm.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="290">
-              <caret line="99" selection-start-line="99" selection-end-line="99" />
-              <folding>
-                <marker date="1555798389811" expanded="true" signature="3927:3933" ph="..." />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/anaconda/lib/python3.6/codecs.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="269">
-              <caret line="310" selection-start-line="310" selection-end-line="310" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/base_train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="150">
-              <caret line="228" selection-start-line="228" selection-end-line="228" />
+            <state relative-caret-position="449">
+              <caret line="132" column="84" selection-start-line="132" selection-start-column="84" selection-end-line="132" selection-end-column="84" />
               <folding>
-                <marker date="1555799797823" expanded="true" signature="1102:1107" ph="..." />
-                <marker date="1555799797823" expanded="true" signature="1368:1373" ph="..." />
-                <marker date="1555799797823" expanded="true" signature="9775:9802" ph="..." />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/config.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-76">
-              <caret line="55" column="18" selection-start-line="55" selection-start-column="18" selection-end-line="55" selection-end-column="18" />
-              <folding>
-                <element signature="e#0#15#0" expanded="true" />
+                <marker date="1555954623066" expanded="true" signature="1102:1107" ph="..." />
+                <marker date="1555954623066" expanded="true" signature="1368:1373" ph="..." />
+                <marker date="1555954623066" expanded="true" signature="10238:10265" ph="..." />
               </folding>
             </state>
           </provider>
@@ -139,23 +82,11 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>train</find>
-      <find>calc_batch_similarity</find>
-      <find>bilinear</find>
-      <find>topk</find>
-      <find>calc_ba</find>
-      <find>use_mid</find>
-      <find>calc_</find>
-      <find>similarity</find>
-      <find>calc_enc</find>
-      <find>get_Src</find>
-      <find>load_all</find>
       <find>process</find>
       <find>try</find>
       <find>share_</find>
       <find>share_vocab</find>
       <find>base</find>
-      <find>calc_batch</find>
       <find>dataloader</find>
       <find>record_result</find>
       <find>write</find>
@@ -169,11 +100,31 @@
       <find>is_mid</find>
       <find>create_ba</find>
       <find>init_test</find>
+      <find>megahinge</find>
+      <find>bl-hinge_</find>
+      <find>--mega 1</find>
+      <find>bl</find>
+      <find>bilinear</find>
+      <find>model_lstm</find>
+      <find>bl-hinge_mid</find>
+      <find>cosine-hinge_mid</find>
+      <find>hinge</find>
+      <find>calc_batch_similarity</find>
+      <find>calc_batch</find>
+      <find>/ 3</find>
     </findStrings>
     <replaceStrings>
       <replace>share_vocab</replace>
       <replace>use_mid</replace>
       <replace>mid</replace>
+      <replace>hinge</replace>
+      <replace>bl-hinge_mid_</replace>
+      <replace>--mega 0</replace>
+      <replace>cosine</replace>
+      <replace>model_charagram</replace>
+      <replace>charagram_bl-hinge_mid</replace>
+      <replace>charagram_cosine-hinge_mid</replace>
+      <replace>mle</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -185,11 +136,15 @@
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/data/train.toy.mid" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/preprocessing/process_wikipedia_byid.py" />
-        <option value="$PROJECT_DIR$/config.py" />
         <option value="$PROJECT_DIR$/model_lstm.py" />
         <option value="$PROJECT_DIR$/model_charagram.py" />
-        <option value="$PROJECT_DIR$/base_train.py" />
         <option value="$PROJECT_DIR$/base_test.py" />
+        <option value="$PROJECT_DIR$/config.py" />
+        <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/model_lstm.py" />
+        <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/model_charagram.py" />
+        <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/train_template2.sh" />
+        <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/train_template.sh" />
+        <option value="$PROJECT_DIR$/base_train.py" />
       </list>
     </option>
   </component>
@@ -200,9 +155,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" fullScreen="true">
-    <option name="x" value="-1920" />
-    <option name="width" value="1920" />
-    <option name="height" value="1080" />
+    <option name="width" value="1440" />
+    <option name="height" value="900" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -251,7 +205,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.model_lstm">
+  <component name="RunManager" selected="Python.model_charagram">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="pbel" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -336,25 +290,26 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1920" y="0" width="1920" height="1080" extended-state="0" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info id="Favorites" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1773163" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19384836" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Python Console" weight="0.29108912" />
+      <window_info anchor="bottom" id="Python Console" sideWeight="0.49946752" weight="0.35421687" />
       <window_info anchor="bottom" id="Terminal" sideWeight="0.49946752" weight="0.32970297" />
-      <window_info anchor="bottom" id="Event Log" sideWeight="0.50106496" side_tool="true" visible="true" weight="0.27722773" />
+      <window_info anchor="bottom" id="Event Log" sideWeight="0.5005325" side_tool="true" weight="0.29108912" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.49893504" visible="true" weight="0.27722773" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49893504" weight="0.27633068" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="right" id="Remote Host" weight="0.24068157" />
+      <window_info anchor="right" id="Remote Host" weight="0.21409921" />
       <window_info anchor="right" x="0" y="0" width="329" height="824" id="Documentation" side_tool="true" weight="0.32971507" />
       <window_info anchor="right" id="SciView" weight="0.32960597" />
       <window_info anchor="right" id="Database" />
@@ -374,7 +329,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/base_train.py</url>
-          <line>442</line>
+          <line>453</line>
           <option name="timeStamp" value="24" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -401,7 +356,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/base_train.py</url>
-          <line>228</line>
+          <line>236</line>
           <option name="timeStamp" value="37" />
         </line-breakpoint>
       </breakpoints>
@@ -418,6 +373,8 @@
         <watch expression="result_file" language="Python" />
         <watch expression="pivot_scores" language="Python" />
         <watch expression="base_scores" language="Python" />
+        <watch expression="diff" language="Python" />
+        <watch expression="correct_score" language="Python" />
       </configuration>
     </watches-manager>
   </component>
@@ -440,6 +397,16 @@
       </expression>
     </expressions>
     <expressions id="watch">
+      <expression>
+        <expression-string>correct_score</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>diff</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
       <expression>
         <expression-string>base_scores</expression-string>
         <language-id>Python</language-id>
@@ -477,16 +444,6 @@
       </expression>
       <expression>
         <expression-string>self.train_mid[80]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>self.train_src[80]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>self.train_mid[75]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -574,7 +531,7 @@
         <state relative-caret-position="1422">
           <caret line="222" selection-start-line="222" selection-end-line="222" />
           <folding>
-            <marker date="1555798481578" expanded="true" signature="1727:1873" ph="..." />
+            <marker date="1555813039246" expanded="true" signature="1727:1873" ph="..." />
           </folding>
         </state>
       </provider>
@@ -589,22 +546,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/base_train.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="228" selection-start-line="228" selection-end-line="228" />
-          <folding>
-            <marker date="1555799797823" expanded="true" signature="1102:1107" ph="..." />
-            <marker date="1555799797823" expanded="true" signature="1368:1373" ph="..." />
-            <marker date="1555799797823" expanded="true" signature="9775:9802" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/anaconda/lib/python3.6/codecs.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="269">
           <caret line="310" selection-start-line="310" selection-end-line="310" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="295">
+          <caret line="21" lean-forward="true" selection-start-line="21" selection-end-line="21" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -613,17 +568,19 @@
         <state relative-caret-position="290">
           <caret line="99" selection-start-line="99" selection-end-line="99" />
           <folding>
-            <marker date="1555798389811" expanded="true" signature="3927:3933" ph="..." />
+            <marker date="1555813039246" expanded="true" signature="3927:3933" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config.py">
+    <entry file="file://$PROJECT_DIR$/base_train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-76">
-          <caret line="55" column="18" selection-start-line="55" selection-start-column="18" selection-end-line="55" selection-end-column="18" />
+        <state relative-caret-position="449">
+          <caret line="132" column="84" selection-start-line="132" selection-start-column="84" selection-end-line="132" selection-end-column="84" />
           <folding>
-            <element signature="e#0#15#0" expanded="true" />
+            <marker date="1555954623066" expanded="true" signature="1102:1107" ph="..." />
+            <marker date="1555954623066" expanded="true" signature="1368:1373" ph="..." />
+            <marker date="1555954623066" expanded="true" signature="10238:10265" ph="..." />
           </folding>
         </state>
       </provider>

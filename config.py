@@ -39,7 +39,7 @@ def argps():
     parser.add_argument("--use_panphon", type=str2bool, default=False)
     
     # training details
-    parser.add_argument("--similarity_measure", choices=("cosine", "bl"), default="cosine")
+    parser.add_argument("--similarity_measure", choices=("cosine", "bl"), default="bl")
     parser.add_argument("--objective", choices=("hinge", "mle"), default="hinge")
     parser.add_argument("--batch_size", type=int, default=100)
     parser.add_argument("--embed_size", type=int, default=64)

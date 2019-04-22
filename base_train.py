@@ -112,19 +112,27 @@ class Encoder(nn.Module):
 
         # if negative_sample is not none, it will move the correct answer to 0
         similarity = self.similarity_measure(src_encoded, trg_encoded, self.bilinear, split=False, pieces=0, negative_sample=ns)
-
         # calc middle representation
+        diff = None
         if use_mid and batch.mid_flag:
+            p = 2/3
             mid_encoded = self.calc_encode(batch, is_src=False, is_mega=False, is_mid=True)
             similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded, self.bilinear_mid, split=False, pieces=0, negative_sample=ns)
             # # [batch_size, 2]
             # correct_score = torch.cat((similarity_src_mid[:, 0:1], similarity[:, 0:1]), dim=1)
+            # diff = correct_score[:, 0] - correct_score[:, 1]
             # # [batch_size, 1]
             # max_score, _ = torch.max(correct_score, dim=1, keepdim=True)
             # similarity = torch.cat((max_score, similarity_src_mid[:, 1:], similarity[:, 1:]), dim=1)
-            similarity = torch.max(similarity_src_mid, similarity)
+            # diff = similarity_src_mid - similarity
+            # diff = torch.mean(diff * diff)
+            # diff = torch.sqrt(diff)
+            # similarity = torch.max(similarity_src_mid, similarity)
+            cur_batch_size =similarity.shape[0]
+            similarity[:int(cur_batch_size * p), :int(cur_batch_size * p)] =\
+                similarity_src_mid[:int(cur_batch_size * p), :int(cur_batch_size * p)]
 
-        return similarity
+        return similarity, diff
 
     def calc_encode(self, *args, **kwargs)->torch.Tensor:
         pass
@@ -320,7 +328,7 @@ class BaseDataLoader:
                 with torch.no_grad():
                     model.eval()
                     batch.to(device)
-                    M = model.calc_batch_similarity(batch, use_negative=False, use_mid=False)
+                    M, _ = model.calc_batch_similarity(batch, use_negative=False, use_mid=False)
                     model.train()
 
                 negative_num = min(1, cur_size - 1)
@@ -368,8 +376,11 @@ def list2nparr(org_list:List[np.ndarray], hidden_size:int):
 
 def calc_batch_loss(model, criterion, batch: BaseBatch):
     # src_tensor, src_lens, src_perm_idx, trg_tensor, trg_kb_id, trg_lens, trg_perm_idx
-    similarity = model.calc_batch_similarity(batch, use_negative=True, use_mid=True)
-    loss = criterion(similarity)
+    similarity, diff = model.calc_batch_similarity(batch, use_negative=True, use_mid=True)
+    if diff is not None:
+        loss = criterion(similarity) + diff
+    else:
+        loss = criterion(similarity)
     return loss
 
 def get_unique_kb_idx(kb_id_list: list):
