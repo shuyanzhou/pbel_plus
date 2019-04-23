@@ -138,9 +138,9 @@ class Charagram(Encoder):
 
         self.activate = torch.tanh
         self.similarity_measure = similarity_measure
-        # self.bilinear = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
-        # torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
-        self.bilinear = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
+        self.bilinear = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+        torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
+        # self.bilinear = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
 
 
         if use_mid:
@@ -153,9 +153,9 @@ class Charagram(Encoder):
                 self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
                 torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
 
-            # self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
-            # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
-            self.bilinear_mid = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
+            self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+            torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            # self.bilinear_mid = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch

@@ -41,12 +41,12 @@ def argps():
     # training details
     parser.add_argument("--similarity_measure", choices=("cosine", "bl"), default="bl")
     parser.add_argument("--objective", choices=("hinge", "mle"), default="hinge")
-    parser.add_argument("--batch_size", type=int, default=100)
+    parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--embed_size", type=int, default=64)
     parser.add_argument("--hidden_size", help="bi-direction", type=int, default=1024)
     parser.add_argument("--margin", type=int, default=1)
     parser.add_argument("--trainer", choices=('adam', 'sgd'), default='adam')
-    parser.add_argument("--learning_rate", type=float, default=1e-3)
+    parser.add_argument("--learning_rate", type=float, default=1e-4)
     parser.add_argument("--max_epoch", type=int, default=500)
 
     # test
