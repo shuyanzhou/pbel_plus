@@ -115,7 +115,7 @@ class Encoder(nn.Module):
         # calc middle representation
         diff = None
         if use_mid and batch.mid_flag:
-            p = 1/3
+            p = 0
             mid_encoded = self.calc_encode(batch, is_src=False, is_mega=False, is_mid=True)
             similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded, self.bilinear_mid, split=False, pieces=0, negative_sample=ns)
             cur_batch_size =similarity.shape[0]
@@ -421,7 +421,7 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
     # calculate similarity`
     # [dev_size, dev_size + kb_size]
     scores = similarity_measure(src_encodings, all_trg_encodings, model.bilinear, split=True, pieces=10, negative_sample=None)
-
+    encoding_scores = np.copy(scores)
     if use_mid:
         mid_KB_encodings = []
         for batch in train_batches:
@@ -452,7 +452,14 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
             recall += 1
         tot += 1
 
-    return recall, tot
+    recall_2 = 0
+    for entry_idx, entry_scores in enumerate(encoding_scores):
+        ranked_idxes = entry_scores.argsort()[::-1]
+        # the correct index is entry_idx
+        if entry_idx in ranked_idxes[:topk]:
+            recall_2 += 1
+
+    return [recall, recall_2], tot
 
 
 def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: optim,
@@ -491,13 +498,17 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                 dev_batches = data_loader.create_batches("dev")
                 start_time = time.time()
                 recall, tot = eval_data(encoder, train_batches, dev_batches, similarity_measure, use_mid=args.use_mid)
-                dev_acc = recall / float(tot)
+                dev_acc = recall[0] / float(tot)
+                # no pivoting
+                dev_encode_acc = recall[1] / float(tot)
                 if dev_acc > best_acc:
                     best_acc = dev_acc
                     last_update = ep + 1
                     save_model(encoder, optimizer, args.model_path + "_" + "best" + ".tar")
                 save_model(encoder, optimizer, args.model_path + "_" + "last" + ".tar")
-                print("[INFO] epoch {:d}: dev acc={:.1f}/{:.1f}={:.4f}, time={:.2f}".format(ep, recall, tot, dev_acc,
+                print("[INFO] epoch {:d}: pivoting dev acc={:.1f}/{:.1f}={:.4f}/{:.4f}, time={:.2f}".format(
+                                                                                            ep, recall[0], tot, dev_acc,
+                                                                                            dev_encode_acc,
                                                                                             time.time()-start_time))
                 if ep + 1 - last_update > PATIENT:
                     break
