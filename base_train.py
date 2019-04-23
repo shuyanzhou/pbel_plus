@@ -16,6 +16,11 @@ from criterion import NSHingeLoss, MultiMarginLoss, CrossEntropyLoss
 from collections import defaultdict
 from itertools import combinations
 
+
+torch.manual_seed(0)
+np.random.seed(0)
+random.seed(0)
+
 print = functools.partial(print, flush=True)
 PATIENT = 50
 EPOCH_CHECK = 2
@@ -344,7 +349,6 @@ class BaseDataLoader:
                 for b in cur_mega_batch:
                     yield b
 
-
         def save_map(self, map, map_file):
             # save map
             with open(map_file, "wb") as f:
@@ -387,7 +391,7 @@ def get_unique_kb_idx(kb_id_list: list):
     return np.array(unique_kb_idx)
 
 # evaluate the whole dataset
-def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[BaseBatch], similarity_measure: Similarity, use_mid = False, topk=2):
+def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[BaseBatch], similarity_measure: Similarity, use_mid = False, topk=30):
     # treat train target strings as the KB
     recall = 0
     tot = 0

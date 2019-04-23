@@ -10,6 +10,12 @@ from base_train import BaseDataLoader, Encoder, FileInfo
 from similarity_calculator import Similarity
 from typing import List
 
+
+torch.manual_seed(0)
+np.random.seed(0)
+random.seed(0)
+
+
 PP_VEC_SIZE = 22
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print = functools.partial(print, flush=True)

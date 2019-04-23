@@ -14,7 +14,8 @@ from base_test import init_test, eval_dataset
 from config import argps
 from similarity_calculator import Similarity
 
-
+torch.manual_seed(0)
+random.seed(0)
 
 
 PP_VEC_SIZE = 22

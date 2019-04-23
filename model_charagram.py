@@ -14,6 +14,10 @@ from base_test import init_test, eval_dataset
 from config import argps
 from similarity_calculator import Similarity
 
+
+torch.manual_seed(0)
+random.seed(0)
+
 print = functools.partial(print, flush=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 START_SYMBOL = "*"
