@@ -11,7 +11,7 @@ elif data == "test":
     fname = "test_template.sh"
 elif data == "ptest":
     test_lang = sys.argv[3]
-    fname = "test_template2.sh"
+    fname = "test_template3.sh"
 else:
     raise NotImplementedError
 

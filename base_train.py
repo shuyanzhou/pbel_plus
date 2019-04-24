@@ -99,7 +99,7 @@ class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
 
-    def calc_batch_similarity(self, batch:BaseBatch, use_negative=False, use_mid=False):
+    def calc_batch_similarity(self, batch:BaseBatch, use_negative=False, use_mid=False, proportion=0):
         #[batch_size, hidden_state]
         src_encoded = self.calc_encode(batch, is_src=True)
         trg_encoded = self.calc_encode(batch, is_src=False)
@@ -120,7 +120,7 @@ class Encoder(nn.Module):
         # calc middle representation
         diff = None
         if use_mid and batch.mid_flag:
-            p = 0
+            p = proportion
             mid_encoded = self.calc_encode(batch, is_src=False, is_mega=False, is_mid=True)
             similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded, self.bilinear_mid, split=False, pieces=0, negative_sample=ns)
             cur_batch_size =similarity.shape[0]
@@ -370,9 +370,9 @@ def list2nparr(org_list:List[np.ndarray], hidden_size:int):
 
     return encodings
 
-def calc_batch_loss(model, criterion, batch: BaseBatch):
+def calc_batch_loss(model, criterion, batch: BaseBatch, proportion):
     # src_tensor, src_lens, src_perm_idx, trg_tensor, trg_kb_id, trg_lens, trg_perm_idx
-    similarity, diff = model.calc_batch_similarity(batch, use_negative=True, use_mid=True)
+    similarity, diff = model.calc_batch_similarity(batch, use_negative=True, use_mid=True, proportion=proportion)
     if diff is not None:
         loss = criterion(similarity) + diff
     else:
@@ -470,7 +470,7 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
           similarity_measure: Similarity, save_model,
           args:argparse.Namespace):
     encoder.to(device)
-    best_acc = float('-inf')
+    best_accs = {"encode_acc": float('-inf'), "pivot_acc": float('-inf')}
     last_update = 0
     for ep in range(args.max_epoch):
         encoder.train()
@@ -486,12 +486,12 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
         batch_num = 0
         for idx, batch in enumerate(train_batches):
             optimizer.zero_grad()
-            cur_loss = calc_batch_loss(encoder, criterion, batch)
+            cur_loss = calc_batch_loss(encoder, criterion, batch, args.mid_proportion)
             train_loss += cur_loss.item()
             cur_loss.backward()
             optimizer.step()
             batch_num += 1
-        print("[INFO] epoch {:d}: train loss={:.4f}, time={:.2f}".format(ep, train_loss / batch_num,
+        print("[INFO] epoch {:d}: train loss={:.8f}, time={:.2f}".format(ep, train_loss / batch_num,
                                                                          time.time()-start_time))
 
         if (ep + 1) % EPOCH_CHECK == 0:
@@ -502,21 +502,22 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                 dev_batches = data_loader.create_batches("dev")
                 start_time = time.time()
                 recall, tot = eval_data(encoder, train_batches, dev_batches, similarity_measure, use_mid=args.use_mid)
-                dev_acc = recall[0] / float(tot)
-                # no pivoting
+                dev_pivot_acc = recall[0] / float(tot)
                 dev_encode_acc = recall[1] / float(tot)
-                if dev_acc > best_acc:
-                    best_acc = dev_acc
+                if dev_encode_acc > best_accs["encode_acc"]:
+                    best_accs["encode_acc"] = dev_encode_acc
+                    best_accs["pivot_acc"] = dev_pivot_acc
                     last_update = ep + 1
                     save_model(encoder, optimizer, args.model_path + "_" + "best" + ".tar")
                 save_model(encoder, optimizer, args.model_path + "_" + "last" + ".tar")
-                print("[INFO] epoch {:d}: pivoting dev acc={:.1f}/{:.1f}={:.4f}/{:.4f}, time={:.2f}".format(
-                                                                                            ep, recall[0], tot, dev_acc,
-                                                                                            dev_encode_acc,
+                print("[INFO] epoch {:d}: encoding/pivoting dev acc={:.4f}/{:.4f}, time={:.2f}".format(
+                                                                                            ep, dev_encode_acc, dev_pivot_acc,
                                                                                             time.time()-start_time))
                 if ep + 1 - last_update > PATIENT:
+                    print("[FINAL] in epoch {}, the best develop encoding/pivoting accuracy = {:.4f}/{:.4f}".format(ep + 1,
+                                                                                                                    best_accs["encode_acc"],
+                                                                                                                    best_accs["pivot_acc"]))
                     break
-
 
 def init_train(args, DataLoader):
     train_file = FileInfo()

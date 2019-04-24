@@ -27,6 +27,7 @@ def argps():
     parser.add_argument("--dev_mid_file", default="")
     parser.add_argument("--mid_str_idx", type=int, default=1)
     parser.add_argument("--mid_id_idx", type=int, default=0)
+    parser.add_argument("--mid_proportion", help="the proportion used in the similarity matrix", type=float, default=0.0)
 
     # train
     parser.add_argument("--train_file", default="")
@@ -47,7 +48,7 @@ def argps():
     parser.add_argument("--margin", type=int, default=1)
     parser.add_argument("--trainer", choices=('adam', 'sgd'), default='adam')
     parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--max_epoch", type=int, default=500)
+    parser.add_argument("--max_epoch", type=int, default=200)
 
     # test
     parser.add_argument("--test_epoch", type=str, default="best")
@@ -67,7 +68,7 @@ def argps():
     #intermedia stuff
     #pivoting
     parser.add_argument("--pivot_file", default="pivot")
-    parser.add_argument("--pivot_str_idx", type=int, default=1)
+    parser.add_argument("--pivot_str_idx", type=int, default=2)
     parser.add_argument("--pivot_id_idx", type=int, default=0)
     parser.add_argument("--encoded_pivot_file")
     parser.add_argument("--load_encoded_pivot", type=str2bool, default=False)
