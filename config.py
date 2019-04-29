@@ -73,8 +73,8 @@ def argps():
     parser.add_argument("--encoded_pivot_file")
     parser.add_argument("--load_encoded_pivot", type=str2bool, default=False)
     parser.add_argument("--pivot_result", default="")
-    parser.add_argument("--pivot_is_src", type=str2bool, default=False)
-    parser.add_argument("--pivot_is_mid", type=str2bool, default=True)
+    parser.add_argument("--pivot_is_src", type=str2bool, default=True)
+    parser.add_argument("--pivot_is_mid", type=str2bool, default=False)
 
 
     args, _ = parser.parse_known_args()

@@ -70,6 +70,19 @@ def close_file_list(file_list):
     for f in file_list:
         f.close()
 
+
+def exact_match(original_scores, test_data_plain, kb_entity_strings):
+    i, j = original_scores.shape
+    assert len(test_data_plain) == i
+    assert len(kb_entity_strings) == j
+    updated_scores = np.copy(original_scores)
+    for idx, data_plain in enumerate(test_data_plain):
+        if data_plain in kb_entity_strings:
+            target_idx = kb_entity_strings.index(data_plain)
+            updated_scores[idx, target_idx] = 1000.0
+    return updated_scores
+
+
 def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, test_data_plain:list,
                 kb_encodings:np.ndarray, kb_ids:np.ndarray, kb_entity_string:list,
                 intermediate_info:dict,
@@ -86,7 +99,9 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
     base_result_string_file = open(save_files["no_pivot_str"], "w+", encoding="utf-8")
     base_files = [base_result_file, base_result_string_file]
     base_scores = similarity_calculator(test_data_encodings, kb_encodings, bilinear_src_trg, split=True, pieces=pieces, negative_sample=None)
-    calc_scores(base_scores, test_data_plain, test_gold_kb_ids, kb_ids, kb_entity_string, base_files, record_recall, base_recall, topk_list)
+    # calc exact match
+    base_scores_with_exact_match = exact_match(base_scores, test_data_plain, kb_entity_string)
+    calc_scores(base_scores_with_exact_match, test_data_plain, test_gold_kb_ids, kb_ids, kb_entity_string, base_files, record_recall, base_recall, topk_list)
 
     for topk, recall in base_recall.items():
         print("[INFO] top {} recall: {:.2f}/{:.2f}={:.4f}".format(topk, recall, tot, recall / tot))
@@ -98,15 +113,19 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
         pivot_encodings = intermediate_info["encodings"]["pivot"]
         pivot_kb_ids = intermediate_info["kb_id"]["pivot"]
         pivot_kb_ids = np.concatenate([kb_ids, pivot_kb_ids])
+
         pivot_kb_entity_string = intermediate_info["plain_text"]["pivot"]
         pivot_kb_entity_string = kb_entity_string + pivot_kb_entity_string
+
         pivot_result_file = open(save_files["pivot"], "w+", encoding="utf-8")
         pivot_result_string_file = open(save_files["pivot_str"], "w+", encoding="utf-8")
         pivot_files = [pivot_result_file, pivot_result_string_file]
 
         pivot_scores = similarity_calculator(test_data_encodings, pivot_encodings, bilinear_src_mid, split=True, pieces=pieces, negative_sample=None)
         combined_scores = np.hstack([base_scores, pivot_scores])
-        calc_scores(combined_scores, test_data_plain, test_gold_kb_ids, pivot_kb_ids, pivot_kb_entity_string, pivot_files, record_recall, pivot_recall, topk_list)
+        # exact match
+        pivot_scores_with_exact_match = exact_match(combined_scores, test_data_plain, pivot_kb_entity_string)
+        calc_scores(pivot_scores_with_exact_match, test_data_plain, test_gold_kb_ids, pivot_kb_ids, pivot_kb_entity_string, pivot_files, record_recall, pivot_recall, topk_list)
 
         print("===============pivoting recall===============")
         for topk, recall in pivot_recall.items():
