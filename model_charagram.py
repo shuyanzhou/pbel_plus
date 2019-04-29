@@ -160,6 +160,8 @@ class Charagram(Encoder):
             self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
             torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
             # self.bilinear_mid = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
+        else:
+            self.bilinear_mid = None
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch

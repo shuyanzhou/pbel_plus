@@ -25,17 +25,17 @@ def argps():
                         type=str2bool, default=False)
     parser.add_argument("--train_mid_file", default="")
     parser.add_argument("--dev_mid_file", default="")
-    parser.add_argument("--mid_str_idx", type=int, default=1)
+    parser.add_argument("--mid_str_idx", help="HRL entity string", type=int, default=1)
     parser.add_argument("--mid_id_idx", type=int, default=0)
-    parser.add_argument("--mid_proportion", help="the proportion used in the similarity matrix", type=float, default=0.0)
+    parser.add_argument("--mid_proportion", help="the proportion used in the similarity matrix", type=float, default=0.3)
 
     # train
     parser.add_argument("--train_file", default="")
     parser.add_argument("--dev_file", default="")
     parser.add_argument("--map_file", default="")
     parser.add_argument("--model_path", default="")
-    parser.add_argument("--src_idx", help="LRL or HRL", type=int, default=2)
-    parser.add_argument("--trg_idx", help="KB string index", type=int, default=1)
+    parser.add_argument("--src_idx", help="LRL or HRL mention string", type=int, default=2)
+    parser.add_argument("--trg_idx", help="KB entity string index", type=int, default=1)
     parser.add_argument("--trg_id_idx", help="KB id index", type=int, default=0)
     parser.add_argument("--use_panphon", type=str2bool, default=False)
     
@@ -58,12 +58,12 @@ def argps():
     parser.add_argument("--encoded_test_file", default="")
     parser.add_argument("--load_encoded_test", type=str2bool, default=False)
     parser.add_argument("--record_recall", type=str2bool, default=True)
-    parser.add_argument("--kb_file", default="/projects/tir2/users/shuyanzh/lorelei_data/pbel/kb_split/en_kb")
+    parser.add_argument("--kb_file", default="/projects/tir2/users/shuyanzh/lorelei_data/pbel/kb_split/ipa_en_kb")
     parser.add_argument("--kb_str_idx", type=int, default=1)
     parser.add_argument("--kb_id_idx", type=int, default=0)
     parser.add_argument("--encoded_kb_file", default="")
     parser.add_argument("--load_encoded_kb", type=str2bool, default=False)
-    parser.add_argument("--no_pivot_result", default="/Users/alexisxy/Workshop/research/pbel/data/nop.result")
+    parser.add_argument("--no_pivot_result", default="")
 
     #intermedia stuff
     #pivoting
@@ -72,7 +72,9 @@ def argps():
     parser.add_argument("--pivot_id_idx", type=int, default=0)
     parser.add_argument("--encoded_pivot_file")
     parser.add_argument("--load_encoded_pivot", type=str2bool, default=False)
-    parser.add_argument("--pivot_result", default="/Users/alexisxy/Workshop/research/pbel/data/p.result")
+    parser.add_argument("--pivot_result", default="")
+    parser.add_argument("--pivot_is_src", type=str2bool, default=False)
+    parser.add_argument("--pivot_is_mid", type=str2bool, default=True)
 
 
     args, _ = parser.parse_known_args()
@@ -81,7 +83,7 @@ def argps():
     # name, file_name, str_idx, id_idx, encoded_file, load_encoded, is_src
     args.intermediate_stuff = []
     args.intermediate_stuff.append(["pivot", args.pivot_file, args.pivot_str_idx, args.pivot_id_idx,
-                                    args.encoded_pivot_file, args.load_encoded_pivot, False, True])
+                                    args.encoded_pivot_file, args.load_encoded_pivot, args.pivot_is_src, args.pivot_is_mid])
 
     # result files
     args.result_file = {}

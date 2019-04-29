@@ -68,9 +68,10 @@ class MultiMarginLoss(nn.Module):
 
 
 class CrossEntropyLoss(nn.Module):
-    def __init__(self, reduction="mean"):
+    def __init__(self, device, reduction="mean"):
         super(CrossEntropyLoss, self).__init__()
         self.criterion = nn.CrossEntropyLoss(reduction=reduction)
+        self.device = device
 
     def forward(self, M):
         # assert M.shape[0] == M.shape[1]

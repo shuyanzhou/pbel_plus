@@ -223,7 +223,10 @@ class BaseDataLoader:
         def init_test(self):
             self.x2i_src = self.load_map(self.map_file + "_src.pkl")
             self.x2i_trg = self.load_map(self.map_file + "_trg.pkl")
-            self.x2i_mid = self.load_map(self.map_file + "_mid.pkl")
+            if self.use_mid:
+                self.x2i_mid = self.load_map(self.map_file + "_mid.pkl")
+            else:
+                self.x2i_mid = None
             self.i2c_src = {v: k for k, v in self.x2i_src.items()}
             self.i2c_trg = {v: k for k, v in self.x2i_trg.items()}
             if self.test_file.src_file_name is not None:
@@ -533,7 +536,7 @@ def init_train(args, DataLoader):
     if args.objective == "hinge":
         criterion = MultiMarginLoss(device, margin=args.margin, reduction="mean")
     elif args.objective == "mle":
-        criterion = CrossEntropyLoss(reduction="mean")
+        criterion = CrossEntropyLoss(device, reduction="mean")
     else:
         raise NotImplementedError
 

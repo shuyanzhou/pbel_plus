@@ -6,7 +6,7 @@ lang = sys.argv[1]
 # train or test
 data = sys.argv[2]
 if data == "train":
-    fname = "train_template.sh"
+    fname = "train_template3.sh"
 elif data == "test":
     fname = "test_template.sh"
 elif data == "ptest":
