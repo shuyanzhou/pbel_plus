@@ -40,14 +40,14 @@ def argps():
     parser.add_argument("--use_panphon", type=str2bool, default=False)
     
     # training details
-    parser.add_argument("--similarity_measure", choices=("cosine", "bl"), default="bl")
-    parser.add_argument("--objective", choices=("hinge", "mle"), default="hinge")
+    parser.add_argument("--similarity_measure", choices=("cosine", "bl"))
+    parser.add_argument("--objective", choices=("hinge", "mle"))
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--embed_size", type=int, default=64)
     parser.add_argument("--hidden_size", help="bi-direction", type=int, default=1024)
     parser.add_argument("--margin", type=int, default=1)
     parser.add_argument("--trainer", choices=('adam', 'sgd'), default='adam')
-    parser.add_argument("--learning_rate", type=float, default=1e-4)
+    parser.add_argument("--learning_rate", type=float)
     parser.add_argument("--max_epoch", type=int, default=200)
 
     # test
@@ -58,7 +58,7 @@ def argps():
     parser.add_argument("--encoded_test_file", default="")
     parser.add_argument("--load_encoded_test", type=str2bool, default=False)
     parser.add_argument("--record_recall", type=str2bool, default=True)
-    parser.add_argument("--kb_file", default="/projects/tir2/users/shuyanzh/lorelei_data/pbel/kb_split/ipa_en_kb")
+    parser.add_argument("--kb_file")
     parser.add_argument("--kb_str_idx", type=int, default=1)
     parser.add_argument("--kb_id_idx", type=int, default=0)
     parser.add_argument("--encoded_kb_file", default="")
