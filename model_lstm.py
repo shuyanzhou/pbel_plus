@@ -87,20 +87,30 @@ class Batch(BaseBatch):
 
 
 class DataLoader(BaseDataLoader):
-    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, train_file=None, dev_file=None, test_file=None):
+    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num):
         super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                                        "<UNK>", train_file, dev_file, test_file)
+                                        "<UNK>", train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num)
 
     def new_batch(self):
         return Batch()
 
-    def load_all_data(self, file_name, str_idx, id_idx, x2i_map):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
                 line_tot += 1
                 tks = line.strip().split(" ||| ")
-                string = [x2i_map[char] for char in tks[str_idx]]
+                if encoding_num == 1:
+                    # make it a list
+                    string = [x2i_map[char] for char in tks[str_idx]]
+                    string = [string]
+                else:
+                    all_string = []
+                    for i in range(encoding_num):
+                        string = [x2i_map[char] for char in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + list(tks[str_idx])]
+                        # string = [x2i_map[char] for char in list(tks[str_idx])]
+                        all_string.append(string)
+                    string = all_string
                 yield (string, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
 
@@ -159,11 +169,12 @@ class LSTMEncoder(Encoder):
                 self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
                 self.mid_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
                 torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
-            self.bilinear_mid = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-            torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            # self.bilinear_mid = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+            # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
         else:
-            self.bilinear_mid = None
-            # self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+            # self.bilinear_mid = None
+            self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
 
 
     # calc_batch_similarity will return the similarity of the batch
@@ -243,4 +254,5 @@ if __name__ == "__main__":
 
         model.load_state_dict(model_info["model_state_dict"])
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
-                     args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.result_file, args.record_recall)
+                     args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.trg_encoding_num,
+                     args.mid_encoding_num, args.result_file, args.record_recall)

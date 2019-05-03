@@ -10,6 +10,14 @@
           <option name="port" value="22" />
         </fileTransfer>
       </webServer>
+      <webServer id="e306e92c-eb61-4f0a-816d-e9bd78b74be0" name="psc" url="http://bridges.psc.edu">
+        <fileTransfer host="bridges.psc.edu" port="22" rootFolder="/home/shuyanzh/workshop/" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

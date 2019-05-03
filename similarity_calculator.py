@@ -63,7 +63,7 @@ class Similarity:
 
     def __call__(self, src_encoded:np.ndarray, trg_encoded:np.ndarray,
                  bilinear_tensor:torch.Tensor,
-                 split, pieces, negative_sample):
+                 split, pieces, negative_sample, encoding_num):
         '''
         :param negative_sample: it is not None only during TRAINING (calc_batch_similarity with has negative_sample on)
         the resulted similarity matrix is sent to criterion for use.
@@ -72,17 +72,30 @@ class Similarity:
         '''
         src_encoded = src_encoded
         trg_encoded = trg_encoded
-        # in training process, mm is enough
+        # in training process, mm is enough, we use pytorch
         if not split:
             if self.method == "cosine":
                 M = self.calc_cosine_similarity(src_encoded, trg_encoded)
             elif self.method == "bl":
                 M = self.calc_bilinear(src_encoded, trg_encoded, bilinear_tensor)
-        else:
+            else:
+                raise NotImplementedError
+            if encoding_num != 1:
+                mul_M = torch.chunk(M, encoding_num, dim=1)
+                # concatenate, [batch_size, batch_size, encoding_num]
+                con_M = torch.stack(mul_M, dim=2)
+                M, _ = torch.max(con_M, dim=2)
+        else: # here the returned matrix is numpy
             if self.method == "cosine":
                 M =  self.calc_cosine_similarity_split(src_encoded, trg_encoded, pieces)
             elif self.method == "bl":
                 M = self.calc_bilinear_split(src_encoded, trg_encoded, bilinear_tensor, pieces)
+            else:
+                raise NotImplementedError
+            # find the version with highest score
+            if encoding_num != 1:
+                mul_M = np.hsplit(M, encoding_num)
+                M = np.maximum.reduce(mul_M)
 
         # prune to have only some negative samples
         if negative_sample is not None:

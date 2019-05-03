@@ -71,35 +71,38 @@ class FileInfo:
         self.mid_str_idx = None
         self.mid_id_idx = None
 
-    def set_all(self, file_name, src_str_idx, trg_str_idx, id_idx):
+    def set_all(self, file_name, src_str_idx, trg_str_idx, id_idx, type_idx):
         self.src_file_name = file_name
         self.trg_file_name = file_name
         self.src_str_idx = int(src_str_idx)
         self.trg_str_idx = int(trg_str_idx)
         self.src_id_idx = int(id_idx)
         self.trg_id_idx = int(id_idx)
+        self.trg_type_idx = int(type_idx)
 
     def set_src(self, file_name, str_idx, id_idx):
         self.src_file_name = file_name
         self.src_str_idx = int(str_idx)
         self.src_id_idx = int(id_idx)
 
-    def set_trg(self, file_name, str_idx, id_idx):
+    def set_trg(self, file_name, str_idx, id_idx, type_idx):
         self.trg_file_name = file_name
         self.trg_str_idx = int(str_idx)
         self.trg_id_idx = int(id_idx)
+        self.trg_type_idx = int(type_idx)
 
-    def set_mid(self, file_name, str_idx, id_idx):
+    def set_mid(self, file_name, str_idx, id_idx, type_idx):
         self.mid_file_name = file_name
         self.mid_str_idx = int(str_idx)
         self.mid_id_idx = int(id_idx)
+        self.mid_type_idx = int(type_idx)
 
 
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
 
-    def calc_batch_similarity(self, batch:BaseBatch, use_negative=False, use_mid=False, proportion=0):
+    def calc_batch_similarity(self, batch:BaseBatch, trg_encoding_num, mid_encoding_num, proportion, use_negative=False, use_mid=False):
         #[batch_size, hidden_state]
         src_encoded = self.calc_encode(batch, is_src=True)
         trg_encoded = self.calc_encode(batch, is_src=False)
@@ -115,14 +118,14 @@ class Encoder(nn.Module):
         else:
             ns = None
 
-        # if negative_sample is not none, it will move the correct answer to 0
-        similarity = self.similarity_measure(src_encoded, trg_encoded, self.bilinear, split=False, pieces=0, negative_sample=ns)
+        # if negative_sample is not none, it will move the correct answer to idx 0
+        similarity = self.similarity_measure(src_encoded, trg_encoded, self.bilinear, split=False, pieces=0, negative_sample=ns, encoding_num=trg_encoding_num)
         # calc middle representation
         diff = None
         if use_mid and batch.mid_flag:
             p = proportion
             mid_encoded = self.calc_encode(batch, is_src=False, is_mega=False, is_mid=True)
-            similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded, self.bilinear_mid, split=False, pieces=0, negative_sample=ns)
+            similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded, self.bilinear_mid, split=False, pieces=0, negative_sample=ns, encoding_num=mid_encoding_num)
             cur_batch_size =similarity.shape[0]
             similarity[:, 1:int(cur_batch_size * p)] =\
                 similarity_src_mid[:, 1:int(cur_batch_size * p)]
@@ -137,7 +140,7 @@ class Encoder(nn.Module):
 
 class BaseDataLoader:
         def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, pad_str,
-                     train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo):
+                     train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo, trg_encoding_num, mid_encoding_num):
             self.batch_size = batch_size
             self.train_file = train_file
             self.dev_file = dev_file
@@ -151,6 +154,8 @@ class BaseDataLoader:
             self.mega_batch_size = mega_size * batch_size
             self.use_mid = use_mid
             self.share_vocab = share_vocab
+            self.trg_encoding_num = trg_encoding_num
+            self.mid_encoding_num = mid_encoding_num
             if is_train:
                 self.init_train()
             else:
@@ -162,8 +167,8 @@ class BaseDataLoader:
             # make sure pad is 0
             self.x2i_src[self.pad_str]
             self.x2i_trg[self.pad_str]
-            self.train_src = list(self.load_data(self.train_file.src_file_name, self.train_file.src_str_idx, self.train_file.src_id_idx, is_src=True))
-            self.train_trg = list(self.load_data(self.train_file.trg_file_name, self.train_file.trg_str_idx, self.train_file.trg_id_idx, is_src=False))
+            self.train_src = list(self.load_data(self.train_file.src_file_name, self.train_file.src_str_idx, self.train_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None))
+            self.train_trg = list(self.load_data(self.train_file.trg_file_name, self.train_file.trg_str_idx, self.train_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.train_file.trg_type_idx))
             # save map
             self.save_map(self.x2i_src, self.map_file + "_src.pkl")
             self.save_map(self.x2i_trg, self.map_file + "_trg.pkl")
@@ -174,8 +179,8 @@ class BaseDataLoader:
                 else:
                     self.x2i_mid = defaultdict(lambda: len(self.x2i_mid))
                     self.x2i_mid[self.pad_str]
-                self.train_mid = list(self.load_data(self.train_file.mid_file_name, self.train_file.mid_str_idx,
-                                                     self.train_file.mid_id_idx, is_src=False, is_mid=True))
+                self.train_mid = list(self.load_data(self.train_file.mid_file_name, self.train_file.mid_str_idx, self.train_file.mid_id_idx,
+                                                     is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.train_file.mid_type_idx))
                 self.save_map(self.x2i_mid, self.map_file + "_mid.pkl")
                 self.mid_vocab_size = len(self.x2i_mid)
                 self.x2i_mid = defaultdict(lambda: self.x2i_mid[self.pad_str], self.x2i_mid)
@@ -192,13 +197,13 @@ class BaseDataLoader:
             self.x2i_trg = defaultdict(lambda: self.x2i_trg[self.pad_str], self.x2i_trg)
 
             if self.dev_file:
-                self.dev_src = list(self.load_data(self.dev_file.src_file_name, self.dev_file.src_str_idx, self.dev_file.src_id_idx, is_src=True))
-                self.dev_trg = list(self.load_data(self.dev_file.trg_file_name, self.dev_file.trg_str_idx, self.dev_file.trg_id_idx, is_src=False))
+                self.dev_src = list(self.load_data(self.dev_file.src_file_name, self.dev_file.src_str_idx, self.dev_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None))
+                self.dev_trg = list(self.load_data(self.dev_file.trg_file_name, self.dev_file.trg_str_idx, self.dev_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.dev_file.trg_type_idx))
                 n = min(len(self.dev_src), 2000)
                 self.dev_src, self.dev_trg = self.dev_src[:n], self.dev_trg[:n]
                 if self.use_mid:
                     self.dev_mid = list(self.load_data(self.dev_file.mid_file_name, self.dev_file.mid_str_idx,
-                                                       self.dev_file.mid_id_idx, is_src=False, is_mid=True))
+                                                       self.dev_file.mid_id_idx, is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.dev_file.mid_type_idx))
                     self.dev_mid = self.dev_mid[:n]
                 else:
                     self.dev_mid = None
@@ -230,23 +235,23 @@ class BaseDataLoader:
             self.i2c_src = {v: k for k, v in self.x2i_src.items()}
             self.i2c_trg = {v: k for k, v in self.x2i_trg.items()}
             if self.test_file.src_file_name is not None:
-                self.test_src = list(self.load_data(self.test_file.src_file_name, self.test_file.src_str_idx, self.test_file.src_id_idx, is_src=True))
+                self.test_src = list(self.load_data(self.test_file.src_file_name, self.test_file.src_str_idx, self.test_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None))
             if self.test_file.trg_file_name is not None:
-                self.test_trg = list(self.load_data(self.test_file.trg_file_name, self.test_file.trg_str_idx, self.test_file.trg_id_idx, is_src=False))
+                self.test_trg = list(self.load_data(self.test_file.trg_file_name, self.test_file.trg_str_idx, self.test_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.test_file.trg_type_idx))
             if self.test_file.mid_file_name is not None:
-                self.test_mid = list(self.load_data(self.test_file.mid_file_name, self.test_file.mid_str_idx, self.test_file.mid_id_idx, is_src=False, is_mid=True))
+                self.test_mid = list(self.load_data(self.test_file.mid_file_name, self.test_file.mid_str_idx, self.test_file.mid_id_idx, is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.test_file.mid_type_idx))
 
-        def load_all_data(self, *args, **kwargs):
+        def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx):
             pass
 
-        def load_data(self, file_name, str_idx, id_idx, is_src, is_mid=False):
+        def load_data(self, file_name, str_idx, id_idx, is_src, encoding_num, type_idx, is_mid=False):
             if is_src:
                 x2i_map = self.x2i_src
             else:
                 x2i_map = self.x2i_trg
             if is_mid:
                 x2i_map = self.x2i_mid
-            return self.load_all_data(file_name, str_idx, id_idx, x2i_map)
+            return self.load_all_data(file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx)
 
         def transform_one_batch(self, *args, **kwargs) -> list:
             pass
@@ -255,10 +260,18 @@ class BaseDataLoader:
             pass
 
         # data from one side
-        def prepare_batch(self, side_data, data_idx):
+        def prepare_batch(self, side_data, data_idx, encoding_num):
+            # this is a list of words
             words = [side_data[idx][0] for idx in data_idx]
+            # expand words to list
+            all_words = []
+            for i in range(encoding_num):
+                all_words += [words[idx][i] for idx in range(len(words))]
+            assert len(all_words) == len(words) * encoding_num
+
+
             kb_ids = [side_data[idx][1] for idx in data_idx]
-            batch_info = self.transform_one_batch(words)
+            batch_info = self.transform_one_batch(all_words)
 
             return batch_info, kb_ids
 
@@ -273,16 +286,17 @@ class BaseDataLoader:
                 cur_size = min(self.batch_size, len(data_idx) - i)
                 cur_data_idx = data_idx[i:i + cur_size]
                 if data_src is not None:
-                    batch_info, src_gold_kb_ids = self.prepare_batch(data_src, cur_data_idx)
+                    batch_info, src_gold_kb_ids = self.prepare_batch(data_src, cur_data_idx, encoding_num=1)
                     batch.set_src(*batch_info, src_gold_kb_ids)
                 if data_trg is not None:
-                    batch_info, trg_kb_ids = self.prepare_batch(data_trg, cur_data_idx)
+                    batch_info, trg_kb_ids = self.prepare_batch(data_trg, cur_data_idx, encoding_num=self.trg_encoding_num)
                     batch.set_trg(*batch_info, trg_kb_ids)
                 if data_mega is not None:
-                    batch_info, trg_kb_ids = self.prepare_batch(data_mega, cur_data_idx)
+                    #TODO this needs to be fix with multiple encodings!
+                    batch_info, trg_kb_ids = self.prepare_batch(data_mega, cur_data_idx, encoding_num=self.trg_encoding_num)
                     batch.set_mega(*batch_info, trg_kb_ids)
                 if data_mid is not None:
-                    batch_info, mid_kb_ids = self.prepare_batch(data_mid, cur_data_idx)
+                    batch_info, mid_kb_ids = self.prepare_batch(data_mid, cur_data_idx, encoding_num=self.mid_encoding_num)
                     batch.set_mid(*batch_info, mid_kb_ids)
                 # move to device
                 batch.to(device)
@@ -328,8 +342,9 @@ class BaseDataLoader:
                 with torch.no_grad():
                     model.eval()
                     batch.to(device)
-                    M, _ = model.calc_batch_similarity(batch, use_negative=False, use_mid=False)
+                    M, _ = model.calc_batch_similarity(batch, use_negative=False, use_mid=False, proportion=0, trg_encoding_num=0, mid_encoding_num=0)
                     model.train()
+                    raise NotImplementedError
 
                 negative_num = min(1, cur_size - 1)
 
@@ -365,17 +380,22 @@ class BaseDataLoader:
                 print("[INFO] load x to idx map from {}, len: {:d}".format(map_file, len(m)))
                 return m
 
-def list2nparr(org_list:List[np.ndarray], hidden_size:int):
-    # last batch might not match the size
-    encodings = np.array(org_list[:-1])
-    encodings = np.reshape(encodings, (-1, hidden_size))
-    encodings = np.append(encodings, np.array(org_list[-1]), axis=0)
+def list2nparr(all_lists:List[List], hidden_size:int, merge=False):
+    combined_encodings = []
+    for org_list in all_lists:
+        # last batch might not match the size
+        encodings = np.array(org_list[:-1])
+        encodings = np.reshape(encodings, (-1, hidden_size))
+        encodings = np.append(encodings, np.array(org_list[-1]), axis=0)
+        combined_encodings.append(encodings)
+    if merge:
+        return np.vstack(combined_encodings)
+    else:
+        return combined_encodings
 
-    return encodings
-
-def calc_batch_loss(model, criterion, batch: BaseBatch, proportion):
+def calc_batch_loss(model, criterion, batch: BaseBatch, proportion, trg_encoding_num, mid_encoding_num):
     # src_tensor, src_lens, src_perm_idx, trg_tensor, trg_kb_id, trg_lens, trg_perm_idx
-    similarity, diff = model.calc_batch_similarity(batch, use_negative=True, use_mid=True, proportion=proportion)
+    similarity, diff = model.calc_batch_similarity(batch, use_negative=True, use_mid=True, proportion=proportion, trg_encoding_num=trg_encoding_num, mid_encoding_num=mid_encoding_num)
     if diff is not None:
         loss = criterion(similarity) + diff
     else:
@@ -393,63 +413,85 @@ def get_unique_kb_idx(kb_id_list: list):
             find_kb_ids.append(id)
     return np.array(unique_kb_idx)
 
+def append_multiple_encodings(encoding_list, encodings, encoding_num):
+    diff_encodings = np.vsplit(encodings, encoding_num)
+    for idx, e in enumerate(diff_encodings):
+        encoding_list[idx].append(e)
+
+def merge_encodings(encoding1:List[np.ndarray], encoding2:List[np.ndarray]):
+    assert len(encoding1) == len(encoding2)
+    combined_encodings = [np.vstack([x, y]) for x, y in zip(encoding1, encoding2)]
+    combined_encodings = np.vstack(combined_encodings)
+    return combined_encodings
+
 # evaluate the whole dataset
-def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[BaseBatch], similarity_measure: Similarity, use_mid = False, topk=30):
+def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[BaseBatch], similarity_measure: Similarity, args_dict: dict):
+    use_mid = args_dict["use_mid"]
+    topk = args_dict["topk"]
+    trg_encoding_num = args_dict["trg_encoding_num"]
+    mid_encoding_num = args_dict["mid_encoding_num"]
     # treat train target strings as the KB
     recall = 0
     tot = 0
-    KB_encodings = []
+    KB_encodings = [[] for _ in range(trg_encoding_num)]
     KB_ids = []
     for batch in train_batches:
-        KB_encodings.append(np.array(model.calc_encode(batch, is_src=False).cpu()))
+        cur_encodings = np.array(model.calc_encode(batch, is_src=False).cpu())
+        append_multiple_encodings(KB_encodings, cur_encodings, trg_encoding_num)
         KB_ids += batch.trg_kb_ids
-    assert len(KB_encodings) == len(train_batches)
+    assert len(KB_encodings[0]) == len(train_batches)
+    KB_encodings = list2nparr(KB_encodings, model.hidden_size)
 
     src_encodings = []
-    trg_encodings = []
+    trg_encodings = [[] for _ in range(trg_encoding_num)]
     trg_kb_ids = []
     for batch in dev_batches:
         src_encodings.append(np.array(model.calc_encode(batch, is_src=True).cpu()))
-        trg_encodings.append(np.array(model.calc_encode(batch, is_src=False).cpu()))
+        cur_encodings = np.array(model.calc_encode(batch, is_src=False).cpu())
+        append_multiple_encodings(trg_encodings, cur_encodings, trg_encoding_num)
         trg_kb_ids += batch.trg_kb_ids
     assert len(src_encodings) == len(dev_batches)
-    assert len(trg_encodings) == len(dev_batches)
+    assert len(trg_encodings[0]) == len(dev_batches)
 
-    src_encodings = list2nparr(src_encodings, model.hidden_size)
+    src_encodings = list2nparr([src_encodings], model.hidden_size, merge=True)
     trg_encodings = list2nparr(trg_encodings, model.hidden_size)
-    KB_encodings = list2nparr(KB_encodings, model.hidden_size)
-    # prune KB_encodings so that all entities are unique
-    unique_kb_idx = get_unique_kb_idx(KB_ids)
-    KB_encodings = KB_encodings[unique_kb_idx]
 
-    all_trg_encodings = np.append(trg_encodings, KB_encodings, axis=0)
-    n = max(all_trg_encodings.shape[0], 80000)
+
+    # TODO might need it in the future
+    # prune KB_encodings so that all entities are unique
+    # unique_kb_idx = get_unique_kb_idx(KB_ids)
+    # KB_encodings = KB_encodings[unique_kb_idx]
+
+    all_trg_encodings = merge_encodings(trg_encodings, KB_encodings)
+    n = max(all_trg_encodings.shape[0], 160000)
     all_trg_encodings = all_trg_encodings[:n]
     # calculate similarity`
     # [dev_size, dev_size + kb_size]
-    scores = similarity_measure(src_encodings, all_trg_encodings, model.bilinear, split=True, pieces=10, negative_sample=None)
+    scores = similarity_measure(src_encodings, all_trg_encodings, model.bilinear, split=True, pieces=10, negative_sample=None, encoding_num=trg_encoding_num)
     encoding_scores = np.copy(scores)
     if use_mid:
-        mid_KB_encodings = []
+        mid_KB_encodings = [[] for _ in range(mid_encoding_num)]
         for batch in train_batches:
-            mid_KB_encodings.append(np.array(model.calc_encode(batch, is_src=False, is_mid=True).cpu()))
+            cur_encodings = np.array(model.calc_encode(batch, is_src=False, is_mid=True).cpu())
+            append_multiple_encodings(mid_KB_encodings, cur_encodings, mid_encoding_num)
             KB_ids += batch.trg_kb_ids
-        assert len(mid_KB_encodings) == len(train_batches)
-
-        mid_encodings = []
-        for batch in dev_batches:
-            mid_encodings.append(np.array(model.calc_encode(batch, is_src=False, is_mid=True).cpu()))
-        assert len(mid_encodings) == len(dev_batches)
-
+        assert len(mid_KB_encodings[0]) == len(train_batches)
         mid_KB_encodings = list2nparr(mid_KB_encodings, model.hidden_size)
-        mid_KB_encodings = mid_KB_encodings[unique_kb_idx]
 
+        mid_encodings = [[] for _ in range(mid_encoding_num)]
+        for batch in dev_batches:
+            cur_encodings = np.array(model.calc_encode(batch, is_src=False, is_mid=True).cpu())
+            append_multiple_encodings(mid_encodings, cur_encodings, mid_encoding_num)
+        assert len(mid_encodings[0]) == len(dev_batches)
         mid_encodings = list2nparr(mid_encodings, model.hidden_size)
-        all_mid_encodings = np.append(mid_encodings, mid_KB_encodings, axis=0)
+
+        # TODO might need it in the future
+        # mid_KB_encodings = mid_KB_encodings[unique_kb_idx]
+        all_mid_encodings = merge_encodings(mid_encodings, mid_KB_encodings)
         all_mid_encodings = all_mid_encodings[:n]
         all_mid_encodings = all_mid_encodings[:n]
 
-        mid_scores = similarity_measure(src_encodings, all_mid_encodings, model.bilinear_mid, split=True, pieces=10, negative_sample=None)
+        mid_scores = similarity_measure(src_encodings, all_mid_encodings, model.bilinear_mid, split=True, pieces=10, negative_sample=None, encoding_num=mid_encoding_num)
         scores = np.maximum(scores, mid_scores)
 
     for entry_idx, entry_scores in enumerate(scores):
@@ -475,6 +517,12 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
     encoder.to(device)
     best_accs = {"encode_acc": float('-inf'), "pivot_acc": float('-inf')}
     last_update = 0
+    dev_arg_dict = {
+        "use_mid": args.use_mid,
+        "topk": 2,
+        "trg_encoding_num": args.trg_encoding_num,
+        "mid_encoding_num": args.mid_encoding_num
+    }
     for ep in range(args.max_epoch):
         encoder.train()
         train_loss = 0.0
@@ -489,7 +537,7 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
         batch_num = 0
         for idx, batch in enumerate(train_batches):
             optimizer.zero_grad()
-            cur_loss = calc_batch_loss(encoder, criterion, batch, args.mid_proportion)
+            cur_loss = calc_batch_loss(encoder, criterion, batch, args.mid_proportion, args.trg_encoding_num, args.mid_encoding_num)
             train_loss += cur_loss.item()
             cur_loss.backward()
             optimizer.step()
@@ -504,7 +552,8 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                 train_batches = data_loader.create_batches("train")
                 dev_batches = data_loader.create_batches("dev")
                 start_time = time.time()
-                recall, tot = eval_data(encoder, train_batches, dev_batches, similarity_measure, use_mid=args.use_mid)
+
+                recall, tot = eval_data(encoder, train_batches, dev_batches, similarity_measure, dev_arg_dict)
                 dev_pivot_acc = recall[0] / float(tot)
                 dev_encode_acc = recall[1] / float(tot)
                 if dev_encode_acc > best_accs["encode_acc"]:
@@ -524,13 +573,13 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
 
 def init_train(args, DataLoader):
     train_file = FileInfo()
-    train_file.set_all(args.train_file, args.src_idx, args.trg_idx, args.trg_id_idx)
-    train_file.set_mid(args.train_mid_file, args.mid_str_idx, args.mid_id_idx)
+    train_file.set_all(args.train_file, args.src_idx, args.trg_idx, args.trg_id_idx, args.trg_type_idx)
+    train_file.set_mid(args.train_mid_file, args.mid_str_idx, args.mid_id_idx, args.mid_type_idx)
     dev_file = FileInfo()
-    dev_file.set_all(args.dev_file, args.src_idx, args.trg_idx, args.trg_id_idx)
-    dev_file.set_mid(args.dev_mid_file, args.mid_str_idx, args.mid_id_idx)
+    dev_file.set_all(args.dev_file, args.src_idx, args.trg_idx, args.trg_id_idx, args.trg_type_idx)
+    dev_file.set_mid(args.dev_mid_file, args.mid_str_idx, args.mid_id_idx, args.mid_type_idx)
     data_loader = DataLoader(True, args.map_file, args.batch_size, args.mega_size, args.use_panphon, args.use_mid, args.share_vocab, train_file=train_file,
-                             dev_file=dev_file)
+                             dev_file=dev_file, test_file=None, trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num)
     similarity_measure = Similarity(args.similarity_measure)
 
     if args.objective == "hinge":
@@ -549,5 +598,4 @@ def create_optimizer(trainer, lr, model):
         optimizer = optim.SGD(model.parameters(), lr)
     else:
         raise NotImplementedError
-
     return optimizer
