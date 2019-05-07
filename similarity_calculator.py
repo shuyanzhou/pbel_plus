@@ -97,8 +97,9 @@ class Similarity:
                 mul_M = np.hsplit(M, encoding_num)
                 M = np.maximum.reduce(mul_M)
 
-        # prune to have only some negative samples
+        # prune to have only some negative samples. only true when training 
         if negative_sample is not None:
+            M = torch.transpose(M, 1, 0)
             if negative_sample != 0:
                 negative_sample = int(negative_sample)
                 assert M.shape[0] != M.shape[1] and M.shape[1] % M.shape[0] == 0
@@ -119,5 +120,5 @@ class Similarity:
                 idx = torch.LongTensor(idx).to(device)
                 tM = torch.gather(M, dim=1, index=idx)
                 M = torch.cat((torch.diag(M).view(-1, 1), tM), dim=1)
-
+                assert M.shape[0] == batch_size and M.shape[1] == batch_size
         return M

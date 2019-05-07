@@ -22,7 +22,7 @@ print = functools.partial(print, flush=True)
 # load data for ONE side (e.g KB or test data)
 
 
-def get_rank(scores:np.ndarray, kb_id:np.ndarray, kb_entity_string:list, topk=30):
+def get_rank(scores:np.ndarray, kb_id:np.ndarray, kb_entity_string:list, topk=100):
     limit = min(len(scores), topk)
     # find the index of top_limit elements
     max_idx = np.argpartition(scores, -limit)[-limit:]
@@ -81,7 +81,7 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
                 intermediate_info:dict,
                 method, similarity_calculator: Similarity, bilinear_tensors: List[torch.Tensor],
                 save_files:dict, trg_encoding_num, mid_encoding_num, topk_list = (1, 2, 5, 10, 30),
-                record_recall=False, use_exact_match=False):
+                record_recall=False, use_exact_match=True):
     #TODO change exact_match back
     pieces=500
     bilinear_src_trg = bilinear_tensors[0]

@@ -48,6 +48,10 @@ for lang in ["ti", "mr", "lo", "te"]:
         cur_fname = os.path.join(base_path, fname.format(lang))
         to_ipa(cur_fname, None, lang)
 '''
-for lang in ["am", "hi", "th", "ta"]:
-    cur_fname = os.path.join(base_path, "en-{}_links".format(lang))
-    to_ipa(cur_fname, None, lang)
+# for lang in ["am", "hi", "th", "ta"]:
+#     cur_fname = os.path.join(base_path, "en-{}_links".format(lang))
+#     to_ipa(cur_fname, None, lang)
+
+for lang in ["am", "hi", "th", "ta", "id", "tr"]:
+    cur_fname = os.path.join(base_path, "ee_val_en-{}_links".format(lang))
+    to_ipa(cur_fname, "en", lang)

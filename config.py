@@ -17,8 +17,8 @@ def argps():
                         type=str2bool, default=False)
 
     # multi version
-    parser.add_argument("--trg_encoding_num", type=int, default=2)
-    parser.add_argument("--mid_encoding_num", type=int, default=2)
+    parser.add_argument("--trg_encoding_num", type=int, default=1)
+    parser.add_argument("--mid_encoding_num", type=int, default=1)
     parser.add_argument("--trg_type_idx", type=int, default=3)
     parser.add_argument("--mid_type_idx", type=int, default=3)
     parser.add_argument("--kb_type_idx", type=int, default=3)
@@ -42,6 +42,7 @@ def argps():
     parser.add_argument("--dev_file", default="")
     parser.add_argument("--map_file", default="")
     parser.add_argument("--model_path", default="")
+    parser.add_argument("--finetune", type=str2bool, default=False)
     parser.add_argument("--src_idx", help="LRL or HRL mention string", type=int, default=2)
     parser.add_argument("--trg_idx", help="KB entity string index", type=int, default=1)
     parser.add_argument("--trg_id_idx", help="KB id index", type=int, default=0)
@@ -55,7 +56,8 @@ def argps():
     parser.add_argument("--hidden_size", help="bi-direction", type=int, default=1024)
     parser.add_argument("--margin", type=int, default=1)
     parser.add_argument("--trainer", choices=('adam', 'sgd'), default='adam')
-    parser.add_argument("--learning_rate", type=float, default=1e-4)
+    parser.add_argument("--learning_rate", type=float)
+    parser.add_argument("--lr_decay", type=str2bool, default=False)
     parser.add_argument("--max_epoch", type=int, default=200)
 
     # test
@@ -90,7 +92,7 @@ def argps():
     # convert intermediate stuff
     # name, file_name, str_idx, id_idx, encoded_file, load_encoded, is_src
     args.intermediate_stuff = []
-    args.intermediate_stuff.append(["pivot", args.pivot_file, args.pivot_str_idx, args.pivot_id_idx,
+    args.intermediate_stuff.append(["pivot", args.pivot_file, args.pivot_str_idx, args.pivot_id_idx, args.pivot_type_idx,
                                     args.encoded_pivot_file, args.load_encoded_pivot, args.pivot_is_src, args.pivot_is_mid])
 
     # result files

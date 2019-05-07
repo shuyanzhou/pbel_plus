@@ -219,15 +219,17 @@ class LSTMEncoder(Encoder):
 
         return reorder_encoded
 
-def save_model(model:LSTMEncoder, optimizer, model_path):
+def save_model(model:LSTMEncoder, epoch, loss, optimizer, model_path):
     torch.save({"model_state_dict": model.state_dict(),
-                "optimizer_statte_dict": optimizer.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
                 "src_vocab_size": model.src_vocab_size,
                 "trg_vocab_size": model.trg_vocab_size,
                 "mid_vocab_size": model.mid_vocab_size,
                 "embed_size": model.embed_size,
                 "hidden_size": model.hidden_size,
-                "similarity_measure": model.similarity_measure.method}, model_path)
+                "similarity_measure": model.similarity_measure.method,
+                "epoch": epoch,
+                "loss": loss}, model_path)
     print("[INFO] save model!")
 
 if __name__ == "__main__":
@@ -238,8 +240,13 @@ if __name__ == "__main__":
                     args.embed_size, args.hidden_size, args.use_panphon,
                     similarity_measure,
                     args.use_mid, args.share_vocab, data_loader.mid_vocab_size)
-        optimizer = create_optimizer(args.trainer, args.learning_rate, model)
-        run(data_loader, model, criterion, optimizer, similarity_measure, save_model, args)
+        optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model, args.lr_decay)
+        if args.finetune:
+            model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
+            model.load_state_dict(model["model_state_dict"])
+            optimizer.load_state_dict(model["optimizer_state_dict"])
+            print("[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
+        run(data_loader, model, criterion, optimizer, scheduler, similarity_measure, save_model, args)
     else:
         base_data_loader, intermedia_stuff = init_test(args, DataLoader)
         model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")

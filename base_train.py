@@ -111,13 +111,12 @@ class Encoder(nn.Module):
             mega_encoded = self.calc_encode(batch, is_src=False, is_mega=True)
             #[batch_size * 2, hidden state ]
             trg_encoded = torch.cat((trg_encoded, mega_encoded), dim=0)
-
+            
         # because this function is also called when calculate mega batch similarity, there is no need to use negative sample
         if use_negative:
             ns = batch.negative_num
         else:
             ns = None
-
         # if negative_sample is not none, it will move the correct answer to idx 0
         similarity = self.similarity_measure(src_encoded, trg_encoded, self.bilinear, split=False, pieces=0, negative_sample=ns, encoding_num=trg_encoding_num)
         # calc middle representation
@@ -511,7 +510,7 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
     return [recall, recall_2], tot
 
 
-def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: optim,
+def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: optim, scheduler: optim.lr_scheduler,
           similarity_measure: Similarity, save_model,
           args:argparse.Namespace):
     encoder.to(device)
@@ -519,10 +518,13 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
     last_update = 0
     dev_arg_dict = {
         "use_mid": args.use_mid,
-        "topk": 2,
+        "topk": 1,
         "trg_encoding_num": args.trg_encoding_num,
         "mid_encoding_num": args.mid_encoding_num
     }
+    lr_decay = scheduler is not None
+    if lr_decay:
+        print("[INFO] using learning rate decay")
     for ep in range(args.max_epoch):
         encoder.train()
         train_loss = 0.0
@@ -540,6 +542,8 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
             cur_loss = calc_batch_loss(encoder, criterion, batch, args.mid_proportion, args.trg_encoding_num, args.mid_encoding_num)
             train_loss += cur_loss.item()
             cur_loss.backward()
+            # optimizer.step()
+            torch.nn.utils.clip_grad_norm_(encoder.parameters(), max_norm=5)
             optimizer.step()
             batch_num += 1
         print("[INFO] epoch {:d}: train loss={:.8f}, time={:.2f}".format(ep, train_loss / batch_num,
@@ -560,8 +564,8 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                     best_accs["encode_acc"] = dev_encode_acc
                     best_accs["pivot_acc"] = dev_pivot_acc
                     last_update = ep + 1
-                    save_model(encoder, optimizer, args.model_path + "_" + "best" + ".tar")
-                save_model(encoder, optimizer, args.model_path + "_" + "last" + ".tar")
+                    save_model(encoder, ep + 1, train_loss, optimizer, args.model_path + "_" + "best" + ".tar")
+                save_model(encoder, ep + 1, train_loss, optimizer, args.model_path + "_" + "last" + ".tar")
                 print("[INFO] epoch {:d}: encoding/pivoting dev acc={:.4f}/{:.4f}, time={:.2f}".format(
                                                                                             ep, dev_encode_acc, dev_pivot_acc,
                                                                                             time.time()-start_time))
@@ -570,6 +574,8 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                                                                                                                     best_accs["encode_acc"],
                                                                                                                     best_accs["pivot_acc"]))
                     break
+        if lr_decay:
+            scheduler.step()
 
 def init_train(args, DataLoader):
     train_file = FileInfo()
@@ -591,11 +597,15 @@ def init_train(args, DataLoader):
 
     return data_loader, criterion, similarity_measure
 
-def create_optimizer(trainer, lr, model):
+def create_optimizer(trainer, lr, model, lr_decay=False):
     if trainer == "adam":
         optimizer = optim.Adam(model.parameters(), lr)
     elif trainer == "sgd":
         optimizer = optim.SGD(model.parameters(), lr)
     else:
         raise NotImplementedError
-    return optimizer
+    if lr_decay:
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[15, 50, 100], gamma=0.3)
+    else:
+        scheduler = None
+    return optimizer, scheduler
