@@ -160,6 +160,16 @@ class LSTMEncoder(Encoder):
 
         self.src_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
         self.trg_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
+        for name, param in self.src_lstm.named_parameters():
+            if 'bias' in name:
+                nn.init.constant_(param, 0.0)
+            elif 'weight' in name:
+                nn.init.xavier_uniform_(param)
+        for name, param in self.trg_lstm.named_parameters():
+            if 'bias' in name:
+                nn.init.constant_(param, 0.0)
+            elif 'weight' in name:
+                nn.init.xavier_uniform_(param)
 
         if use_mid:
             if share_vocab:

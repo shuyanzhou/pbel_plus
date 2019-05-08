@@ -589,7 +589,8 @@ def init_train(args, DataLoader):
     similarity_measure = Similarity(args.similarity_measure)
 
     if args.objective == "hinge":
-        criterion = MultiMarginLoss(device, margin=args.margin, reduction="mean")
+        # criterion = MultiMarginLoss(device, margin=args.margin, reduction="mean")
+        criterion = MultiMarginLoss(device, margin=args.margin, reduction="sum")
     elif args.objective == "mle":
         criterion = CrossEntropyLoss(device, reduction="mean")
     else:
