@@ -160,16 +160,9 @@ class LSTMEncoder(Encoder):
 
         self.src_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
         self.trg_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
-        for name, param in self.src_lstm.named_parameters():
-            if 'bias' in name:
-                nn.init.constant_(param, 0.0)
-            elif 'weight' in name:
-                nn.init.xavier_uniform_(param)
-        for name, param in self.trg_lstm.named_parameters():
-            if 'bias' in name:
-                nn.init.constant_(param, 0.0)
-            elif 'weight' in name:
-                nn.init.xavier_uniform_(param)
+
+        self.reset_lstm_parameters(self.src_lstm)
+        self.reset_lstm_parameters(self.trg_lstm)
 
         if use_mid:
             if share_vocab:
@@ -185,6 +178,18 @@ class LSTMEncoder(Encoder):
         else:
             # self.bilinear_mid = None
             self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+
+    def reset_lstm_parameters(self, lstm):
+        for name, param in lstm.state_dict().items():
+            if "weight" in name:
+                nn.init.xavier_uniform_(param)
+            elif "bias" in name:
+                if "bias_hh" in name:
+                    p = torch.zeros_like(param)
+                    p[512:1024] = 1.0
+                    param.copy_(p)
+                else:
+                    nn.init.constant_(param, 0.0)
 
 
     # calc_batch_similarity will return the similarity of the batch

@@ -509,6 +509,16 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
 
     return [recall, recall_2], tot
 
+def reset_bias(module):
+    param = module.state_dict()["bias_hh_l0"]
+    p = torch.zeros_like(param)
+    p[512:1024] = 1.0
+    param.copy_(p)
+
+    param = module.state_dict()["bias_hh_l0_reverse"]
+    p = torch.zeros_like(param)
+    p[512:1024] = 1.0
+    param.copy_(p)
 
 def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: optim, scheduler: optim.lr_scheduler,
           similarity_measure: Similarity, save_model,
@@ -545,6 +555,11 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
             # optimizer.step()
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), max_norm=5)
             optimizer.step()
+
+            # set all but forget gate bias to 0
+            reset_bias(encoder.src_lstm)
+            reset_bias(encoder.trg_lstm)
+
             batch_num += 1
         print("[INFO] epoch {:d}: train loss={:.8f}, time={:.2f}".format(ep, train_loss / batch_num,
                                                                          time.time()-start_time))
@@ -589,8 +604,8 @@ def init_train(args, DataLoader):
     similarity_measure = Similarity(args.similarity_measure)
 
     if args.objective == "hinge":
-        # criterion = MultiMarginLoss(device, margin=args.margin, reduction="mean")
-        criterion = MultiMarginLoss(device, margin=args.margin, reduction="sum")
+        criterion = MultiMarginLoss(device, margin=args.margin, reduction="mean")
+        # criterion = MultiMarginLoss(device, margin=args.margin, reduction="sum")
     elif args.objective == "mle":
         criterion = CrossEntropyLoss(device, reduction="mean")
     else:
