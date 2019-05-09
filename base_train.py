@@ -381,11 +381,9 @@ class BaseDataLoader:
 
 def list2nparr(all_lists:List[List], hidden_size:int, merge=False):
     combined_encodings = []
-    for org_list in all_lists:
+    for version_list in all_lists:
         # last batch might not match the size
-        encodings = np.array(org_list[:-1])
-        encodings = np.reshape(encodings, (-1, hidden_size))
-        encodings = np.append(encodings, np.array(org_list[-1]), axis=0)
+        encodings = np.concatenate(version_list, axis=0)
         combined_encodings.append(encodings)
     if merge:
         return np.vstack(combined_encodings)

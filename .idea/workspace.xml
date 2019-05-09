@@ -6,9 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="6f3e622a-8c50-4801-9d0a-97d4b347d712" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/base_train.py" beforeDir="false" afterPath="$PROJECT_DIR$/base_train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_charagram.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_charagram.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_lstm.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_lstm.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,7 +16,7 @@
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/pbel$model_lstm.coverage" NAME="model_lstm Coverage Results" MODIFIED="1557285480768" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pbel$model_lstm_debug.coverage" NAME="model_lstm_debug Coverage Results" MODIFIED="1557108362409" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/pbel$model_charagram.coverage" NAME="model_charagram Coverage Results" MODIFIED="1555790576394" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pbel$model_charagram.coverage" NAME="model_charagram Coverage Results" MODIFIED="1557426397968" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pbel$test_model_lstm_.coverage" NAME="test_model_lstm  Coverage Results" MODIFIED="1557174723198" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="DatabaseView">
@@ -71,7 +68,7 @@
         <counts>
           <entry key="gitignore" value="7" />
           <entry key="mid" value="17" />
-          <entry key="py" value="17354" />
+          <entry key="py" value="17396" />
           <entry key="sh" value="481" />
         </counts>
       </usages-collector>
@@ -79,7 +76,7 @@
         <counts>
           <entry key="Bash" value="481" />
           <entry key="PLAIN_TEXT" value="24" />
-          <entry key="Python" value="17354" />
+          <entry key="Python" value="17396" />
         </counts>
       </usages-collector>
     </session>
@@ -89,11 +86,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model_charagram.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4536">
-              <caret line="216" column="28" selection-start-line="216" selection-start-column="28" selection-end-line="216" selection-end-column="28" />
+            <state relative-caret-position="248">
+              <caret line="114" selection-start-line="114" selection-end-line="114" />
             </state>
           </provider>
         </entry>
@@ -113,17 +110,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model_lstm.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="257">
+            <state relative-caret-position="313">
               <caret line="137" column="27" selection-start-line="137" selection-start-column="27" selection-end-line="137" selection-end-column="27" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/base_train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="883">
-              <caret line="582" selection-start-line="582" selection-end-line="582" />
+            <state relative-caret-position="66">
+              <caret line="376" column="34" lean-forward="true" selection-start-line="376" selection-start-column="34" selection-end-line="376" selection-end-column="34" />
             </state>
           </provider>
         </entry>
@@ -132,7 +129,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>calc_batch_</find>
       <find>similarity_measure</find>
       <find>similarity</find>
       <find>calc_result</find>
@@ -162,6 +158,7 @@
       <find>calc_Res</find>
       <find>margin</find>
       <find>reset</find>
+      <find>save_model</find>
     </findStrings>
     <replaceStrings>
       <replace>share_vocab</replace>
@@ -218,9 +215,9 @@
         <option value="$PROJECT_DIR$/similarity_calculator.py" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/config.py" />
         <option value="$PROJECT_DIR$/config.py" />
-        <option value="$PROJECT_DIR$/base_train.py" />
         <option value="$PROJECT_DIR$/model_lstm.py" />
         <option value="$PROJECT_DIR$/model_charagram.py" />
+        <option value="$PROJECT_DIR$/base_train.py" />
       </list>
     </option>
   </component>
@@ -279,7 +276,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.test_model_charagram ">
+  <component name="RunManager" selected="Python.model_charagram">
     <configuration name="model_charagram" type="PythonConfigurationType" factoryName="Python">
       <module name="pbel" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -291,7 +288,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/model_charagram.py" />
-      <option name="PARAMETERS" value="--is_train 1 --use_mid 0 --share_vocab 0 --method &quot;pivoting&quot; --train_file &quot;$PROJECT_DIR$/data/train.toy&quot; --train_mid_file &quot;$PROJECT_DIR$/data/train.toy.mid&quot; --dev_file &quot;$PROJECT_DIR$/data/dev.toy&quot; --dev_mid_file &quot;$PROJECT_DIR$/data/dev.toy.mid&quot; --map_file &quot;$PROJECT_DIR$/data/map&quot; --model_path &quot;$PROJECT_DIR$/data/model&quot; --test_file &quot;$PROJECT_DIR$/data/train.toy&quot; --kb_file &quot;$PROJECT_DIR$/data/train.toy&quot; --pivot_file &quot;$PROJECT_DIR$/data/train.toy.mid&quot; --no_pivot_result &quot;$PROJECT_DIR$/data/nop&quot; --pivot_result &quot;$PROJECT_DIR$/data/p&quot; --similarity_measure &quot;bl&quot; --objective &quot;hinge&quot; --trainer &quot;sgd&quot; --learning_rate 0.1" />
+      <option name="PARAMETERS" value="--is_train 1 --use_mid 0 --share_vocab 0 --trg_encoding_num 2 --method &quot;pivoting&quot; --train_file &quot;$PROJECT_DIR$/data/train.toy&quot; --train_mid_file &quot;$PROJECT_DIR$/data/train.toy.mid&quot; --dev_file &quot;$PROJECT_DIR$/data/dev.toy&quot; --dev_mid_file &quot;$PROJECT_DIR$/data/dev.toy.mid&quot; --map_file &quot;$PROJECT_DIR$/data/map&quot; --model_path &quot;$PROJECT_DIR$/data/model&quot; --test_file &quot;$PROJECT_DIR$/data/train.toy&quot; --kb_file &quot;$PROJECT_DIR$/data/train.toy&quot; --pivot_file &quot;$PROJECT_DIR$/data/train.toy.mid&quot; --no_pivot_result &quot;$PROJECT_DIR$/data/nop&quot; --pivot_result &quot;$PROJECT_DIR$/data/p&quot; --similarity_measure &quot;bl&quot; --objective &quot;hinge&quot; --trainer &quot;sgd&quot; --learning_rate 0.1" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -406,7 +403,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49893504" weight="0.39638555" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49893504" weight="0.39576718" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32891566" />
@@ -414,7 +411,7 @@
       <window_info anchor="bottom" id="Version Control" order="8" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Terminal" order="10" sideWeight="0.49946752" weight="0.32891566" />
-      <window_info anchor="bottom" id="Python Console" order="11" sideWeight="0.49946752" weight="0.31746033" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="11" sideWeight="0.49946752" visible="true" weight="0.31746033" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.5005325" side_tool="true" weight="0.29108912" />
       <window_info anchor="bottom" id="File Transfer" order="13" weight="0.32891566" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -463,8 +460,13 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/base_train.py</url>
-          <line>493</line>
+          <line>491</line>
           <option name="timeStamp" value="75" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/base_train.py</url>
+          <line>171</line>
+          <option name="timeStamp" value="118" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -666,22 +668,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/model_lstm.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="257">
+        <state relative-caret-position="313">
           <caret line="137" column="27" selection-start-line="137" selection-start-column="27" selection-end-line="137" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/base_train.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="883">
-          <caret line="582" selection-start-line="582" selection-end-line="582" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/model_charagram.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4536">
-          <caret line="216" column="28" selection-start-line="216" selection-start-column="28" selection-end-line="216" selection-end-column="28" />
+        <state relative-caret-position="248">
+          <caret line="114" selection-start-line="114" selection-end-line="114" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/base_train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="66">
+          <caret line="376" column="34" lean-forward="true" selection-start-line="376" selection-start-column="34" selection-end-line="376" selection-end-column="34" />
         </state>
       </provider>
     </entry>
