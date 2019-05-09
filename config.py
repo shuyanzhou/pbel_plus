@@ -49,8 +49,8 @@ def argps():
     parser.add_argument("--use_panphon", type=str2bool, default=False)
     
     # training details
-    parser.add_argument("--similarity_measure", choices=("cosine", "bl"))
-    parser.add_argument("--objective", choices=("hinge", "mle"))
+    parser.add_argument("--similarity_measure", choices=("cosine", "bl"), required=True)
+    parser.add_argument("--objective", choices=("hinge", "mle"), required=True)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--embed_size", type=int, default=64)
     parser.add_argument("--hidden_size", help="bi-direction", type=int, default=1024)
@@ -68,7 +68,7 @@ def argps():
     parser.add_argument("--encoded_test_file", default="")
     parser.add_argument("--load_encoded_test", type=str2bool, default=False)
     parser.add_argument("--record_recall", type=str2bool, default=True)
-    parser.add_argument("--kb_file")
+    parser.add_argument("--kb_file", required=True)
     parser.add_argument("--kb_str_idx", type=int, default=1)
     parser.add_argument("--kb_id_idx", type=int, default=0)
     parser.add_argument("--encoded_kb_file", default="")
@@ -83,8 +83,8 @@ def argps():
     parser.add_argument("--encoded_pivot_file")
     parser.add_argument("--load_encoded_pivot", type=str2bool, default=False)
     parser.add_argument("--pivot_result", default="")
-    parser.add_argument("--pivot_is_src", type=str2bool)
-    parser.add_argument("--pivot_is_mid", type=str2bool)
+    parser.add_argument("--pivot_is_src", type=str2bool, required=True)
+    parser.add_argument("--pivot_is_mid", type=str2bool, required=True)
 
 
     args, _ = parser.parse_known_args()

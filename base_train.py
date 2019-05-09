@@ -528,7 +528,7 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
     last_update = 0
     dev_arg_dict = {
         "use_mid": args.use_mid,
-        "topk": 1,
+        "topk": 30,
         "trg_encoding_num": args.trg_encoding_num,
         "mid_encoding_num": args.mid_encoding_num
     }

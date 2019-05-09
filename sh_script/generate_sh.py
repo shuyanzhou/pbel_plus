@@ -7,14 +7,14 @@ lang = sys.argv[1]
 data = sys.argv[2]
 if data == "train_ipa":
     fname = "train_template3.sh"
-elif data == "train_graphme":
+elif data == "train_grapheme":
     fname = "train_template4.sh"
 elif data == "test":
     fname = "test_template.sh"
 elif data == "ptest_ipa":
     test_lang = sys.argv[3]
     fname = "test_template3.sh"
-elif data == "ptest_graphme":
+elif data == "ptest_grapheme":
     test_lang = sys.argv[3]
     fname = "test_template4.sh"
 else:
