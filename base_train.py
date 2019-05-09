@@ -556,9 +556,10 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), max_norm=5)
             optimizer.step()
 
-            # set all but forget gate bias to 0
-            reset_bias(encoder.src_lstm)
-            reset_bias(encoder.trg_lstm)
+            if encoder.name == "bilstm":
+                # set all but forget gate bias to 0
+                reset_bias(encoder.src_lstm)
+                reset_bias(encoder.trg_lstm)
 
             batch_num += 1
         print("[INFO] epoch {:d}: train loss={:.8f}, time={:.2f}".format(ep, train_loss / batch_num,

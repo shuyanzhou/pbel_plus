@@ -135,14 +135,15 @@ class LSTMEncoder(Encoder):
     def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure:Similarity,
                  use_mid, share_vocab, mid_vocab_size=0):
         super(LSTMEncoder, self).__init__()
+        self.name = "bilstm"
         self.similarity_measure = similarity_measure
         self.src_vocab_size = src_vocab_size
         self.trg_vocab_size = trg_vocab_size
         self.embed_size = embed_size
         self.hidden_size = hidden_size
-        self.bilinear = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-        torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
-        # self.bilinear = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+        # self.bilinear = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        # torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
+        self.bilinear = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
         self.use_mid = use_mid
         self.share_vocab = share_vocab
         self.mid_vocab_size=mid_vocab_size
@@ -176,8 +177,8 @@ class LSTMEncoder(Encoder):
             # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
             self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
         else:
-            # self.bilinear_mid = None
-            self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+            self.bilinear_mid = None
+            # self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
 
     def reset_lstm_parameters(self, lstm):
         for name, param in lstm.state_dict().items():

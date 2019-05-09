@@ -92,20 +92,28 @@ class Batch(BaseBatch):
 
 class DataLoader(BaseDataLoader):
     def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                 train_file=None, dev_file=None, test_file=None):
+                 train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num):
         super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                                        "<pad>", train_file, dev_file, test_file)
+                                        "<pad>", train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num)
 
     def new_batch(self):
         return Batch()
 
-    def load_all_data(self, file_name, str_idx, id_idx, x2i_map):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
                 line_tot += 1
                 tks = line.strip().split(" ||| ")
-                string = [x2i_map[ngram] for ngram in get_ngram(tks[str_idx])]
+                if encoding_num == 1:
+                    string = [x2i_map[ngram] for ngram in get_ngram(tks[str_idx])]
+                    string = [string]
+                else:
+                    all_string = []
+                    for i in range(encoding_num):
+                        string = [x2i_map[ngram] for ngram in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + get_ngram(tks[str_idx])]
+                        all_string.append(string)
+                    string = all_string
                 yield (string, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
 
@@ -123,6 +131,8 @@ class DataLoader(BaseDataLoader):
 class Charagram(Encoder):
     def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure, use_mid, share_vocab, mid_vocab_size=0):
         super(Charagram, self).__init__()
+        self.name = "charagram"
+        self.similarity_measure = similarity_measure
         self.src_vocab_size = src_vocab_size
         self.trg_vocab_size = trg_vocab_size
         self.mid_vocab_size = mid_vocab_size
@@ -130,21 +140,21 @@ class Charagram(Encoder):
         self.share_vocab = share_vocab
         self.hidden_size = embed_size
         self.embed_size = embed_size
+        self.activate = torch.tanh
+
         # parameters
         self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
         torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
         self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
         torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
         self.bias_src = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
-        torch.nn.init.xavier_uniform_(self.bias_src, gain=1)
+        torch.nn.init.constant_(self.bias_src, 0.0)
         self.bias_trg = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
-        torch.nn.init.xavier_uniform_(self.bias_trg, gain=1)
+        torch.nn.init.constant_(self.bias_trg, 0.0)
 
-        self.activate = torch.tanh
-        self.similarity_measure = similarity_measure
-        self.bilinear = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
-        torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
-        # self.bilinear = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
+        # self.bilinear = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+        # torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
+        self.bilinear = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
 
 
         if use_mid:
@@ -157,9 +167,9 @@ class Charagram(Encoder):
                 self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
                 torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
 
-            self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
-            torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
-            # self.bilinear_mid = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
+            # self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
+            # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
+            self.bilinear_mid = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
         else:
             self.bilinear_mid = None
 
@@ -195,14 +205,16 @@ class Charagram(Encoder):
         encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
         return encoded
 
-def save_model(model:Charagram, optimizer, model_path):
+def save_model(model:Charagram, epoch, loss, optimizer, model_path):
     torch.save({"model_state_dict": model.state_dict(),
                 "optimizer_statte_dict": optimizer.state_dict(),
                 "src_vocab_size": model.src_vocab_size,
                 "trg_vocab_size": model.trg_vocab_size,
                 "mid_vocab_size": model.mid_vocab_size,
                 "embed_size": model.embed_size,
-                "similarity_measure": model.similarity_measure.method}, model_path)
+                "similarity_measure": model.similarity_measure.method,
+                "epoch": epoch,
+                "loss": loss}, model_path)
     print("[INFO] save model!")
 
 if __name__ == "__main__":
@@ -211,8 +223,16 @@ if __name__ == "__main__":
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
         model = Charagram(data_loader.src_vocab_size, data_loader.trg_vocab_size,
                     args.embed_size, similarity_measure, args.use_mid, args.share_vocab, data_loader.mid_vocab_size)
-        optimizer = create_optimizer(args.trainer, args.learning_rate, model)
-        run(data_loader, model, criterion, optimizer, similarity_measure, save_model, args)
+        optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model)
+
+        if args.finetune:
+            model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
+            model.load_state_dict(model["model_state_dict"])
+            optimizer.load_state_dict(model["optimizer_state_dict"])
+            print(
+                "[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
+
+        run(data_loader, model, criterion, optimizer, scheduler, similarity_measure, save_model, args)
     else:
         base_data_loader, intermedia_stuff = init_test(args, DataLoader)
         model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
@@ -226,5 +246,7 @@ if __name__ == "__main__":
 
         model.load_state_dict(model_info["model_state_dict"])
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
-                     args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.result_file, args.record_recall)
+                     args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.trg_encoding_num,
+                     args.mid_encoding_num,
+                     args.result_file, args.record_recall)
 
