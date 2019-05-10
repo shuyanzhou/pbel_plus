@@ -5,20 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6f3e622a-8c50-4801-9d0a-97d4b347d712" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/other.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/pbel.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/webServers.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/base_train.py" beforeDir="false" afterPath="$PROJECT_DIR$/base_train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_charagram.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_charagram.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_lstm.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_lstm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/preprocessing/add_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocessing/add_type.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sh_script/generate_sh.py" beforeDir="false" afterPath="$PROJECT_DIR$/sh_script/generate_sh.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/similarity_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/similarity_calculator.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -28,7 +15,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/pbel$model_lstm.coverage" NAME="model_lstm Coverage Results" MODIFIED="1557435826593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/pbel$model_lstm.coverage" NAME="model_lstm Coverage Results" MODIFIED="1557457361865" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pbel$model_lstm_debug.coverage" NAME="model_lstm_debug Coverage Results" MODIFIED="1557108362409" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pbel$model_charagram.coverage" NAME="model_charagram Coverage Results" MODIFIED="1557426397968" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/pbel$test_model_lstm_.coverage" NAME="test_model_lstm  Coverage Results" MODIFIED="1557174723198" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
@@ -51,10 +38,10 @@
     <session id="-35238522">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="1" />
-          <entry key="project.open.time.0" value="1" />
+          <entry key="project.closed" value="2" />
+          <entry key="project.open.time.0" value="2" />
           <entry key="project.open.time.5" value="1" />
-          <entry key="project.opened" value="2" />
+          <entry key="project.opened" value="3" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -64,7 +51,7 @@
           <entry key="id" value="3" />
           <entry key="log" value="66" />
           <entry key="mid" value="9" />
-          <entry key="py" value="141" />
+          <entry key="py" value="162" />
           <entry key="sh" value="90" />
           <entry key="str" value="11" />
           <entry key="toy" value="8" />
@@ -76,7 +63,7 @@
           <entry key="Bash" value="90" />
           <entry key="Log" value="66" />
           <entry key="PLAIN_TEXT" value="33" />
-          <entry key="Python" value="141" />
+          <entry key="Python" value="162" />
           <entry key="XML" value="1" />
         </counts>
       </usages-collector>
@@ -84,7 +71,7 @@
         <counts>
           <entry key="gitignore" value="7" />
           <entry key="mid" value="17" />
-          <entry key="py" value="19831" />
+          <entry key="py" value="19861" />
           <entry key="sh" value="684" />
         </counts>
       </usages-collector>
@@ -92,7 +79,14 @@
         <counts>
           <entry key="Bash" value="684" />
           <entry key="PLAIN_TEXT" value="24" />
-          <entry key="Python" value="19831" />
+          <entry key="Python" value="19861" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.vcs.git.usages">
+        <counts>
+          <entry key="git.branch.checkout.local" value="3" />
+          <entry key="git.branch.create.new" value="1" />
+          <entry key="git.branch.delete.local" value="1" />
         </counts>
       </usages-collector>
     </session>
@@ -105,8 +99,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/base_train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="392">
-              <caret line="212" column="14" selection-start-line="212" selection-start-column="14" selection-end-line="212" selection-end-column="14" />
+            <state relative-caret-position="177">
+              <caret line="186" selection-start-line="186" selection-end-line="186" />
             </state>
           </provider>
         </entry>
@@ -114,8 +108,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/similarity_calculator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="303">
-              <caret line="15" selection-start-line="15" selection-end-line="15" />
+            <state relative-caret-position="-2182">
+              <caret line="48" column="47" selection-start-line="48" selection-start-column="47" selection-end-line="48" selection-end-column="47" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -124,46 +118,13 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="354">
-              <caret line="51" column="81" selection-start-line="51" selection-start-column="81" selection-end-line="51" selection-end-column="81" />
-              <folding>
-                <element signature="e#0#15#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/base_test.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="221" column="121" selection-start-line="221" selection-start-column="121" selection-end-line="221" selection-end-column="121" />
-              <folding>
-                <element signature="e#0#35#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model_lstm.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1294">
-              <caret line="173" lean-forward="true" selection-start-line="173" selection-end-line="173" />
+            <state relative-caret-position="27">
+              <caret line="257" selection-start-line="257" selection-end-line="257" />
               <folding>
                 <marker date="1557456096439" expanded="true" signature="7242:7247" ph="..." />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/model_charagram.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3486">
-              <caret line="166" lean-forward="true" selection-start-line="166" selection-end-line="166" />
             </state>
           </provider>
         </entry>
@@ -200,8 +161,8 @@
       <find>similarity_calculator</find>
       <find>cosine-hinge</find>
       <find>en-lang_ee_mend_cosine-hinge-multi_grapheme</find>
-      <find>split_large_matric</find>
       <find>eval_da</find>
+      <find>split_large_matric</find>
     </findStrings>
     <replaceStrings>
       <replace>share_vocab</replace>
@@ -228,6 +189,11 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="branch2" />
+      </map>
+    </option>
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
@@ -284,10 +250,10 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-1687" />
-    <option name="y" value="79" />
-    <option name="width" value="1396" />
-    <option name="height" value="877" />
+    <option name="x" value="-1771" />
+    <option name="y" value="68" />
+    <option name="width" value="1534" />
+    <option name="height" value="994" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -295,6 +261,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -306,7 +273,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -319,7 +285,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="PyScientificConfigurable" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -345,8 +311,30 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/model_lstm.py" />
-      <option name="PARAMETERS" value="--is_train 1 --use_mid 0 --share_vocab 0 --method &quot;pivoting&quot; --train_file &quot;$PROJECT_DIR$/data/train.toy&quot; --train_mid_file &quot;$PROJECT_DIR$/data/train.toy&quot; --dev_file &quot;$PROJECT_DIR$/data/dev.toy&quot; --dev_mid_file &quot;$PROJECT_DIR$/data/dev.toy&quot; --map_file &quot;$PROJECT_DIR$/data/map&quot; --model_path &quot;$PROJECT_DIR$/data/model&quot; --similarity_measure &quot;bl&quot; --objective &quot;hinge&quot; --trainer &quot;sgd&quot; --learning_rate 0.1" />
+      <option name="PARAMETERS" value="--is_train 1 --use_mid 0 --share_vocab 0 --method &quot;pivoting&quot; --train_file &quot;$PROJECT_DIR$/data/train.toy&quot; --train_mid_file &quot;$PROJECT_DIR$/data/train.toy&quot; --dev_file &quot;$PROJECT_DIR$/data/dev.toy&quot; --dev_mid_file &quot;$PROJECT_DIR$/data/dev.toy&quot; --map_file &quot;$PROJECT_DIR$/data/map&quot; --model_path &quot;$PROJECT_DIR$/data/model&quot; --similarity_measure &quot;lcosine&quot; --objective &quot;hinge&quot; --trainer &quot;sgd&quot; --learning_rate 0.1" />
       <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="similarity_calculator" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="pbel" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/similarity_calculator.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
       <option name="REDIRECT_INPUT" value="false" />
@@ -357,6 +345,9 @@
       <module name="pbel" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -376,6 +367,9 @@
       <module name="pbel" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -395,7 +389,13 @@
       <item itemvalue="Python.test_model_charagram " />
       <item itemvalue="Python.model_lstm" />
       <item itemvalue="Python.test_model_lstm " />
+      <item itemvalue="Python.similarity_calculator" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.similarity_calculator" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -420,16 +420,16 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1687" y="79" width="1396" height="877" extended-state="0" />
+    <frame x="-1771" y="68" width="1534" height="994" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49808916" visible="true" weight="0.15288036" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49808916" visible="true" weight="0.25" />
       <window_info id="Structure" order="1" sideWeight="0.5019108" side_tool="true" weight="0.15288036" />
       <window_info id="Favorites" order="2" sideWeight="0.50120485" side_tool="true" weight="0.19384836" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49893504" weight="0.39490446" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49893504" weight="0.3436807" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32891566" />
@@ -437,13 +437,13 @@
       <window_info anchor="bottom" id="Version Control" order="8" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Terminal" order="10" sideWeight="0.49946752" weight="0.32891566" />
-      <window_info anchor="bottom" id="Python Console" order="11" sideWeight="0.49946752" weight="0.37834394" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="11" sideWeight="0.49946752" visible="true" weight="0.37804878" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.5005325" side_tool="true" weight="0.29108912" />
       <window_info anchor="bottom" id="File Transfer" order="13" weight="0.32891566" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" auto_hide="true" x="437" y="186" width="566" height="528" id="SciView" order="3" show_stripe_button="false" type="FLOATING" weight="0.32904148" />
+      <window_info anchor="right" x="437" y="186" width="566" height="528" id="SciView" order="3" weight="0.32904148" />
       <window_info anchor="right" x="0" y="0" width="329" height="824" id="Documentation" order="4" side_tool="true" weight="0.3290735" />
       <window_info anchor="right" id="Database" order="5" weight="0.3297568" />
       <window_info anchor="right" id="Remote Host" order="6" weight="0.17799114" />
@@ -490,9 +490,9 @@
           <option name="timeStamp" value="75" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/base_train.py</url>
-          <line>186</line>
-          <option name="timeStamp" value="118" />
+          <url>file://$PROJECT_DIR$/similarity_calculator.py</url>
+          <line>107</line>
+          <option name="timeStamp" value="121" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -501,6 +501,7 @@
         <watch expression="similarity" language="Python" />
         <watch expression="torch.topk(similarity, k=4)" language="Python" />
         <watch expression="torch.topk(M, k=4)" language="Python" />
+        <watch expression="cur_trg_encoded.shape" language="Python" />
       </configuration>
     </watches-manager>
   </component>
@@ -523,6 +524,11 @@
       </expression>
     </expressions>
     <expressions id="watch">
+      <expression>
+        <expression-string>cur_trg_encoded.shape</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
       <expression>
         <expression-string>torch.topk(M, k=4)</expression-string>
         <language-id>Python</language-id>
@@ -568,8 +574,10 @@
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
+    </expressions>
+    <expressions id="evaluateExpression">
       <expression>
-        <expression-string>np.save(&quot;/Users/alexisxy/Desktop/train.npy&quot;, mid_scores)</expression-string>
+        <expression-string>cur_trg_encoded.shape</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -664,7 +672,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/base_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
+        <state relative-caret-position="682">
           <caret line="221" column="121" selection-start-line="221" selection-start-column="121" selection-end-line="221" selection-end-column="121" />
           <folding>
             <element signature="e#0#35#0" expanded="true" />
@@ -672,9 +680,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/model_charagram.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="262">
+          <caret line="146" column="26" selection-start-line="146" selection-start-column="26" selection-end-line="146" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/config.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="354">
+        <state relative-caret-position="696">
           <caret line="51" column="81" selection-start-line="51" selection-start-column="81" selection-end-line="51" selection-end-column="81" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
@@ -682,34 +697,27 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/base_train.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="392">
-          <caret line="212" column="14" selection-start-line="212" selection-start-column="14" selection-end-line="212" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/model_charagram.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3486">
-          <caret line="166" lean-forward="true" selection-start-line="166" selection-end-line="166" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/model_lstm.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1294">
-          <caret line="173" lean-forward="true" selection-start-line="173" selection-end-line="173" />
+        <state relative-caret-position="27">
+          <caret line="257" selection-start-line="257" selection-end-line="257" />
           <folding>
             <marker date="1557456096439" expanded="true" signature="7242:7247" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/base_train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="177">
+          <caret line="186" selection-start-line="186" selection-end-line="186" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/similarity_calculator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="303">
-          <caret line="15" selection-start-line="15" selection-end-line="15" />
+        <state relative-caret-position="-2182">
+          <caret line="48" column="47" selection-start-line="48" selection-start-column="47" selection-end-line="48" selection-end-column="47" />
           <folding>
             <element signature="e#0#12#0" expanded="true" />
           </folding>

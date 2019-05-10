@@ -39,7 +39,7 @@ class Similarity:
             cur_batch_size = min(batch_size, matrix.shape[0])
             cur_matrix = matrix[:cur_batch_size]
             cur_matrix = torch.from_numpy(cur_matrix).to(device).float()
-            matrix = np.delete(matrix, [x for x in range(cur_batch_size)])
+            matrix = np.delete(matrix, [x for x in range(cur_batch_size)], axis=0)
             yield cur_matrix
 
     def calc_cosine_similarity(self, src_encoded, trg_encoded):
@@ -101,7 +101,7 @@ class Similarity:
         # split target to 10 pieces
         # 10 [src_size, piece_size]
         similarity_collection = []
-        for cur_trg_encoded in self.split_large_matric(trg_encoded, pieces):
+        for cur_trg_encoded in self.split_large_matrix(trg_encoded, pieces):
             similarity = torch.mm(src_encoded, torch.mm(bl_tensor, torch.transpose(cur_trg_encoded, 1, 0)))
             similarity_collection.append(similarity.detach().cpu().numpy())
         # concatenate
