@@ -25,11 +25,21 @@ class Similarity:
     def set_trg_affine(self, t: torch.Tensor):
         self.trg_affine = t
 
-    def split_large_matric(self, matrix:np.ndarray, pieces):
-        k, m = divmod(matrix.shape[0], pieces)
-        for i in range(pieces):
-            cur_matrix = matrix[i * k + min(i, m):(i + 1) * k + min(i + 1, m)]
+    # def split_large_matrix(self, matrix:np.ndarray, pieces):
+    #     k, m = divmod(matrix.shape[0], pieces)
+    #     for i in range(pieces):
+    #         cur_matrix = matrix[i * k + min(i, m):(i + 1) * k + min(i + 1, m)]
+    #         cur_matrix = torch.from_numpy(cur_matrix).to(device).float()
+    #         yield cur_matrix
+
+    def split_large_matrix(self, matrix:np.ndarray, pieces):
+        batch_size = matrix.shape[0] // pieces
+        tot = matrix.shape[0]
+        for _ in range(0, tot, batch_size):
+            cur_batch_size = min(batch_size, matrix.shape[0])
+            cur_matrix = matrix[:cur_batch_size]
             cur_matrix = torch.from_numpy(cur_matrix).to(device).float()
+            matrix = np.delete(matrix, [x for x in range(cur_batch_size)])
             yield cur_matrix
 
     def calc_cosine_similarity(self, src_encoded, trg_encoded):
@@ -46,12 +56,12 @@ class Similarity:
         src_norm_encoded = src_encoded / src_norm
         # split target to 10 pieces
         similarity_collection = []
-        for cur_trg_encoded in self.split_large_matric(trg_encoded, pieces):
+        for cur_trg_encoded in self.split_large_matrix(trg_encoded, pieces):
             cur_trg_norm = torch.norm(cur_trg_encoded, dim=1, keepdim=True)
             cur_trg_norm_encoded = cur_trg_encoded / cur_trg_norm
             # [src_size, piece_size]
             similarity = torch.matmul(src_norm_encoded, torch.transpose(cur_trg_norm_encoded, 1, 0))
-            similarity_collection.append(similarity.cpu().numpy())
+            similarity_collection.append(similarity.detach().cpu().numpy())
         # concatenate
         similarity_collection = np.hstack(tuple(similarity_collection))
         return similarity_collection
@@ -68,7 +78,7 @@ class Similarity:
     def calc_linear_cosine_split(self, src_encoded, trg_encoded, is_src_trg, pieces):
         src_encoded = torch.from_numpy(src_encoded).to(device).float()
         similarity_collection = []
-        for cur_trg_encoded in self.split_large_matric(trg_encoded, pieces):
+        for cur_trg_encoded in self.split_large_matrix(trg_encoded, pieces):
             similarity = self.calc_linear_cosine(src_encoded, cur_trg_encoded, is_src_trg)
             similarity_collection.append(similarity.detach().cpu().numpy())
         similarity_collection = np.hstack(tuple(similarity_collection))

@@ -5,11 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6f3e622a-8c50-4801-9d0a-97d4b347d712" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/base_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/base_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/other.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/pbel.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/webServers.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/base_train.py" beforeDir="false" afterPath="$PROJECT_DIR$/base_train.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/model_charagram.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_charagram.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/model_lstm.py" beforeDir="false" afterPath="$PROJECT_DIR$/model_lstm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocessing/add_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocessing/add_type.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sh_script/generate_sh.py" beforeDir="false" afterPath="$PROJECT_DIR$/sh_script/generate_sh.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/similarity_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/similarity_calculator.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -75,7 +84,7 @@
         <counts>
           <entry key="gitignore" value="7" />
           <entry key="mid" value="17" />
-          <entry key="py" value="19804" />
+          <entry key="py" value="19831" />
           <entry key="sh" value="684" />
         </counts>
       </usages-collector>
@@ -83,7 +92,7 @@
         <counts>
           <entry key="Bash" value="684" />
           <entry key="PLAIN_TEXT" value="24" />
-          <entry key="Python" value="19804" />
+          <entry key="Python" value="19831" />
         </counts>
       </usages-collector>
     </session>
@@ -93,25 +102,22 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/base_train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="7679">
-              <caret line="559" column="24" selection-start-line="559" selection-start-column="24" selection-end-line="559" selection-end-column="24" />
+            <state relative-caret-position="392">
+              <caret line="212" column="14" selection-start-line="212" selection-start-column="14" selection-end-line="212" selection-end-column="14" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/similarity_calculator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="797">
-              <caret line="89" column="44" selection-start-line="89" selection-start-column="44" selection-end-line="89" selection-end-column="44" />
+            <state relative-caret-position="303">
+              <caret line="15" selection-start-line="15" selection-end-line="15" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
-                <marker date="1557454623918" expanded="true" signature="528:790" ph="..." />
-                <marker date="1557454623918" expanded="true" signature="1107:1112" ph="..." />
-                <marker date="1557454623918" expanded="true" signature="2879:3344" ph="..." />
               </folding>
             </state>
           </provider>
@@ -144,10 +150,10 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model_lstm.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3591">
-              <caret line="171" selection-start-line="171" selection-end-line="171" />
+            <state relative-caret-position="-1294">
+              <caret line="173" lean-forward="true" selection-start-line="173" selection-end-line="173" />
               <folding>
-                <marker date="1557436609868" expanded="true" signature="7241:7247" ph="..." />
+                <marker date="1557456096439" expanded="true" signature="7242:7247" ph="..." />
               </folding>
             </state>
           </provider>
@@ -156,8 +162,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model_charagram.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="546">
-              <caret line="26" column="19" selection-start-line="26" selection-start-column="19" selection-end-line="26" selection-end-column="19" />
+            <state relative-caret-position="3486">
+              <caret line="166" lean-forward="true" selection-start-line="166" selection-end-line="166" />
             </state>
           </provider>
         </entry>
@@ -166,7 +172,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>todo</find>
       <find>shuffle</find>
       <find>list2nparr</find>
       <find>merge_encodings</find>
@@ -196,6 +201,7 @@
       <find>cosine-hinge</find>
       <find>en-lang_ee_mend_cosine-hinge-multi_grapheme</find>
       <find>split_large_matric</find>
+      <find>eval_da</find>
     </findStrings>
     <replaceStrings>
       <replace>share_vocab</replace>
@@ -254,7 +260,6 @@
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/preprocessing/add_type.py" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/train_template31.sh" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/base_train.py" />
-        <option value="$PROJECT_DIR$/model_lstm.py" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/train_ipa_am.sh" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/test_template31.sh" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/test_template41.sh" />
@@ -262,12 +267,13 @@
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/config.py" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/ptest_grapheme_mr.sh" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/sh_script/ptest_ipa_ti.sh" />
-        <option value="$PROJECT_DIR$/model_charagram.py" />
         <option value="&lt;1afa8860-d32c-4e55-9fec-29392811dfcc&gt;/pbel/similarity_calculator.py" />
         <option value="$PROJECT_DIR$/base_test.py" />
-        <option value="$PROJECT_DIR$/similarity_calculator.py" />
         <option value="$PROJECT_DIR$/config.py" />
         <option value="$PROJECT_DIR$/base_train.py" />
+        <option value="$PROJECT_DIR$/model_charagram.py" />
+        <option value="$PROJECT_DIR$/model_lstm.py" />
+        <option value="$PROJECT_DIR$/similarity_calculator.py" />
       </list>
     </option>
   </component>
@@ -283,6 +289,7 @@
     <option name="width" value="1396" />
     <option name="height" value="877" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
@@ -327,25 +334,6 @@
     </option>
   </component>
   <component name="RunManager" selected="Python.model_lstm">
-    <configuration name="model_charagram" type="PythonConfigurationType" factoryName="Python">
-      <module name="pbel" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/model_charagram.py" />
-      <option name="PARAMETERS" value="--is_train 1 --use_mid 0 --share_vocab 0 --trg_encoding_num 2 --method &quot;pivoting&quot; --train_file &quot;$PROJECT_DIR$/data/train.toy&quot; --train_mid_file &quot;$PROJECT_DIR$/data/train.toy.mid&quot; --dev_file &quot;$PROJECT_DIR$/data/dev.toy&quot; --dev_mid_file &quot;$PROJECT_DIR$/data/dev.toy.mid&quot; --map_file &quot;$PROJECT_DIR$/data/map&quot; --model_path &quot;$PROJECT_DIR$/data/model&quot; --test_file &quot;$PROJECT_DIR$/data/train.toy&quot; --kb_file &quot;$PROJECT_DIR$/data/train.toy&quot; --pivot_file &quot;$PROJECT_DIR$/data/train.toy.mid&quot; --no_pivot_result &quot;$PROJECT_DIR$/data/nop&quot; --pivot_result &quot;$PROJECT_DIR$/data/p&quot; --similarity_measure &quot;bl&quot; --objective &quot;hinge&quot; --trainer &quot;sgd&quot; --learning_rate 0.1" />
-      <option name="SHOW_COMMAND_LINE" value="true" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="model_lstm" type="PythonConfigurationType" factoryName="Python">
       <module name="pbel" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -404,16 +392,10 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.model_charagram" />
       <item itemvalue="Python.test_model_charagram " />
       <item itemvalue="Python.model_lstm" />
       <item itemvalue="Python.test_model_lstm " />
     </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Python.model_charagram" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -439,8 +421,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1687" y="79" width="1396" height="877" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49808916" visible="true" weight="0.15288036" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49808916" visible="true" weight="0.15288036" />
       <window_info id="Structure" order="1" sideWeight="0.5019108" side_tool="true" weight="0.15288036" />
       <window_info id="Favorites" order="2" sideWeight="0.50120485" side_tool="true" weight="0.19384836" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -503,7 +486,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/base_train.py</url>
-          <line>508</line>
+          <line>509</line>
           <option name="timeStamp" value="75" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -689,26 +672,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/model_charagram.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="546">
-          <caret line="26" column="19" selection-start-line="26" selection-start-column="19" selection-end-line="26" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/similarity_calculator.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="797">
-          <caret line="89" column="44" selection-start-line="89" selection-start-column="44" selection-end-line="89" selection-end-column="44" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-            <marker date="1557454623918" expanded="true" signature="528:790" ph="..." />
-            <marker date="1557454623918" expanded="true" signature="1107:1112" ph="..." />
-            <marker date="1557454623918" expanded="true" signature="2879:3344" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/config.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="354">
@@ -719,20 +682,37 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/base_train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="392">
+          <caret line="212" column="14" selection-start-line="212" selection-start-column="14" selection-end-line="212" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model_charagram.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3486">
+          <caret line="166" lean-forward="true" selection-start-line="166" selection-end-line="166" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/model_lstm.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3591">
-          <caret line="171" selection-start-line="171" selection-end-line="171" />
+        <state relative-caret-position="-1294">
+          <caret line="173" lean-forward="true" selection-start-line="173" selection-end-line="173" />
           <folding>
-            <marker date="1557436609868" expanded="true" signature="7241:7247" ph="..." />
+            <marker date="1557456096439" expanded="true" signature="7242:7247" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/base_train.py">
+    <entry file="file://$PROJECT_DIR$/similarity_calculator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7679">
-          <caret line="559" column="24" selection-start-line="559" selection-start-column="24" selection-end-line="559" selection-end-column="24" />
+        <state relative-caret-position="303">
+          <caret line="15" selection-start-line="15" selection-end-line="15" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

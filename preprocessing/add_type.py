@@ -12,8 +12,8 @@ all_langs = sys.argv[1].split(",")
 base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/data"
 for lang in all_langs:
     for suffix in ["", ".ipa", ".mid.ipa", ".mid"]:
-        with open(os.path.join(base_path, "ee_mend_train_en-{}_links".format(lang) + suffix) + ".type", "r", encoding="utf-8") as f:
-            with open(os.path.join(base_path, "ee_mend_train_en-{}_links".format(lang) + suffix), "w+", encoding="utf-8") as fout:
+        with open(os.path.join(base_path, "unique_mend_ee_val_en-{}_links".format(lang) + suffix), "r", encoding="utf-8") as f:
+            with open(os.path.join(base_path, "unique_mend_ee_val_en-{}_links".format(lang) + suffix) + ".type", "w+", encoding="utf-8") as fout:
                 for line in f:
                     tks = line.strip().split(" ||| ")
                     if len(tks) == 4:
@@ -21,5 +21,5 @@ for lang in all_langs:
                     else:
                         type = id_type_map[tks[0]]
                         fout.write(" ||| ".join(tks + [type]) + "\n")
-        # os.rename(os.path.join(base_path, "ee_mend_train_en-{}_links".format(lang) + suffix),
-        #           os.path.join(base_path, "ee_mend_train_en-{}_links".format(lang) + suffix + ".type"))
+        os.rename(os.path.join(base_path, "unique_mend_ee_val_en-{}_links".format(lang) + suffix) + ".type",
+                  os.path.join(base_path, "unique_mend_ee_val_en-{}_links".format(lang) + suffix))

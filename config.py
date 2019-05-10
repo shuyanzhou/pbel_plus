@@ -21,7 +21,7 @@ def argps():
     parser.add_argument("--mid_encoding_num", type=int, default=1)
     parser.add_argument("--trg_type_idx", type=int, default=3)
     parser.add_argument("--mid_type_idx", type=int, default=3)
-    parser.add_argument("--kb_type_idx", type=int, default=3)
+    parser.add_argument("--kb_type_idx", type=int, default=2)
     parser.add_argument("--pivot_type_idx", type=int, default=3)
 
     # mega batch
