@@ -13,6 +13,18 @@ class Similarity:
         self.method = method
         print("[INFO] using {} to measure similarity".format(self.method))
 
+    def set_src_mid_bl(self, t: torch.Tensor):
+        self.src_mid_bl = t
+
+    def set_src_trg_bl(self, t: torch.Tensor):
+        self.src_trg_bl = t
+
+    def set_src_affine(self, t: torch.Tensor):
+        self.src_affine = t
+
+    def set_trg_affine(self, t: torch.Tensor):
+        self.trg_affine = t
+
     def split_large_matric(self, matrix:np.ndarray, pieces):
         k, m = divmod(matrix.shape[0], pieces)
         for i in range(pieces):
@@ -44,25 +56,50 @@ class Similarity:
         similarity_collection = np.hstack(tuple(similarity_collection))
         return similarity_collection
     
+    def calc_linear_cosine(self, src_encoded, trg_encoded, is_src_trg):
+        if is_src_trg:
+            src = torch.mm(src_encoded, self.src_affine)
+            trg = torch.mm(trg_encoded, self.trg_affine)
+        else: # src and mid does not need transformation
+            src = src_encoded
+            trg = trg_encoded
+        return self.calc_cosine_similarity(src, trg)
 
-    def calc_bilinear(self, src_encoded, trg_encoded, bilinear_tensor):
-        bilinear_score = torch.mm(src_encoded, torch.mm(bilinear_tensor, torch.transpose(trg_encoded, 1, 0)))
+    def calc_linear_cosine_split(self, src_encoded, trg_encoded, is_src_trg, pieces):
+        src_encoded = torch.from_numpy(src_encoded).to(device).float()
+        similarity_collection = []
+        for cur_trg_encoded in self.split_large_matric(trg_encoded, pieces):
+            similarity = self.calc_linear_cosine(src_encoded, cur_trg_encoded, is_src_trg)
+            similarity_collection.append(similarity.detach().cpu().numpy())
+        similarity_collection = np.hstack(tuple(similarity_collection))
+        return similarity_collection
+
+    def calc_bilinear(self, src_encoded, trg_encoded, is_src_trg):
+        if is_src_trg:
+            bl_tensor = self.src_trg_bl
+        else:
+            bl_tensor = self.src_mid_bl
+        bilinear_score = torch.mm(src_encoded, torch.mm(bl_tensor, torch.transpose(trg_encoded, 1, 0)))
         return bilinear_score
 
-    def calc_bilinear_split(self, src_encoded, trg_encoded, bilinear_tensor, pieces):
+    def calc_bilinear_split(self, src_encoded, trg_encoded, is_src_trg, pieces):
+        if is_src_trg:
+            bl_tensor = self.src_trg_bl
+        else:
+            bl_tensor = self.src_mid_bl
         src_encoded = torch.from_numpy(src_encoded).to(device).float()
         # split target to 10 pieces
         # 10 [src_size, piece_size]
         similarity_collection = []
         for cur_trg_encoded in self.split_large_matric(trg_encoded, pieces):
-            similarity = torch.mm(src_encoded, torch.mm(bilinear_tensor, torch.transpose(cur_trg_encoded, 1, 0)))
-            similarity_collection.append(similarity.cpu().numpy())
+            similarity = torch.mm(src_encoded, torch.mm(bl_tensor, torch.transpose(cur_trg_encoded, 1, 0)))
+            similarity_collection.append(similarity.detach().cpu().numpy())
         # concatenate
         similarity_collection = np.hstack(tuple(similarity_collection))
         return similarity_collection
 
     def __call__(self, src_encoded:np.ndarray, trg_encoded:np.ndarray,
-                 bilinear_tensor:torch.Tensor,
+                 is_src_trg,
                  split, pieces, negative_sample, encoding_num):
         '''
         :param negative_sample: it is not None only during TRAINING (calc_batch_similarity with has negative_sample on)
@@ -77,7 +114,9 @@ class Similarity:
             if self.method == "cosine":
                 M = self.calc_cosine_similarity(src_encoded, trg_encoded)
             elif self.method == "bl":
-                M = self.calc_bilinear(src_encoded, trg_encoded, bilinear_tensor)
+                M = self.calc_bilinear(src_encoded, trg_encoded, is_src_trg)
+            elif self.method == "lcosine":
+                M = self.calc_linear_cosine(src_encoded, trg_encoded, is_src_trg)
             else:
                 raise NotImplementedError
             if encoding_num != 1:
@@ -89,7 +128,9 @@ class Similarity:
             if self.method == "cosine":
                 M =  self.calc_cosine_similarity_split(src_encoded, trg_encoded, pieces)
             elif self.method == "bl":
-                M = self.calc_bilinear_split(src_encoded, trg_encoded, bilinear_tensor, pieces)
+                M = self.calc_bilinear_split(src_encoded, trg_encoded, is_src_trg, pieces)
+            elif self.method == "lcosine":
+                M = self.calc_linear_cosine_split(src_encoded, trg_encoded, is_src_trg, pieces)
             else:
                 raise NotImplementedError
             # find the version with highest score

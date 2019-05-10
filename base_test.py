@@ -79,13 +79,11 @@ def exact_match(original_scores, test_data_plain, kb_entity_strings):
 def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, test_data_plain:list,
                 kb_encodings:np.ndarray, kb_ids:np.ndarray, kb_entity_string:list,
                 intermediate_info:dict,
-                method, similarity_calculator: Similarity, bilinear_tensors: List[torch.Tensor],
+                method, similarity_calculator: Similarity,
                 save_files:dict, trg_encoding_num, mid_encoding_num, topk_list = (1, 2, 5, 10, 30),
                 record_recall=False, use_exact_match=True):
     #TODO change exact_match back
     pieces=500
-    bilinear_src_trg = bilinear_tensors[0]
-    bilinear_src_mid = bilinear_tensors[1]
     # no pivoting, base method
     tot = float(test_data_encodings.shape[0])
     # base method
@@ -93,7 +91,8 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
     base_result_file = open(save_files["no_pivot"], "w+", encoding="utf-8")
     base_result_string_file = open(save_files["no_pivot_str"], "w+", encoding="utf-8")
     base_files = [base_result_file, base_result_string_file]
-    base_scores = similarity_calculator(test_data_encodings, kb_encodings, bilinear_src_trg, split=True, pieces=pieces, negative_sample=None, encoding_num=trg_encoding_num)
+    base_scores = similarity_calculator(test_data_encodings, kb_encodings,
+                                        is_src_trg=True, split=True, pieces=pieces, negative_sample=None, encoding_num=trg_encoding_num)
     # calc exact match
     if use_exact_match:
         base_scores = exact_match(base_scores, test_data_plain, kb_entity_string)
@@ -118,7 +117,8 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
         pivot_result_string_file = open(save_files["pivot_str"], "w+", encoding="utf-8")
         pivot_files = [pivot_result_file, pivot_result_string_file]
 
-        pivot_scores = similarity_calculator(test_data_encodings, pivot_encodings, bilinear_src_mid, split=True, pieces=pieces, negative_sample=None, encoding_num=mid_encoding_num)
+        pivot_scores = similarity_calculator(test_data_encodings, pivot_encodings,
+                                             is_src_trg=False, split=True, pieces=pieces, negative_sample=None, encoding_num=mid_encoding_num)
         combined_scores = np.hstack([base_scores, pivot_scores])
         # exact match
         if use_exact_match:
@@ -219,7 +219,7 @@ def eval_dataset(model:Encoder, similarity_calculator: Similarity,
         start_time = time.time()
         calc_result(encoded_test, test_gold_kb_id, test_data_plain,
                     encoded_kb, kb_ids, kb_entity_string,
-                    intermediate_info, method, similarity_calculator, [model.bilinear, model.bilinear_mid], result_files, trg_encoding_num, mid_encoding_num, record_recall=record_recall)
+                    intermediate_info, method, similarity_calculator, result_files, trg_encoding_num, mid_encoding_num, record_recall=record_recall)
 
         print("[INFO] take {:.4f}s to calculate similarity".format(time.time() - start_time))
 

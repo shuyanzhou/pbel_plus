@@ -99,8 +99,15 @@ class FileInfo:
 
 
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, hidden_size):
         super(Encoder, self).__init__()
+        self.hidden_size = hidden_size
+        self.src_trg_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+        self.src_mid_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+        self.src_affine = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        nn.init.xavier_uniform_(self.src_affine, gain=1)
+        self.trg_affine = nn.Parameter(torch.zeros(self.hidden_size, self.hidden_size))
+        nn.init.xavier_uniform_(self.trg_affine, gain=1)
 
     def calc_batch_similarity(self, batch:BaseBatch, trg_encoding_num, mid_encoding_num, proportion, use_negative=False, use_mid=False):
         #[batch_size, hidden_state]
@@ -118,13 +125,15 @@ class Encoder(nn.Module):
         else:
             ns = None
         # if negative_sample is not none, it will move the correct answer to idx 0
-        similarity = self.similarity_measure(src_encoded, trg_encoded, self.bilinear, split=False, pieces=0, negative_sample=ns, encoding_num=trg_encoding_num)
+        similarity = self.similarity_measure(src_encoded, trg_encoded, is_src_trg=True,
+                                             split=False, pieces=0, negative_sample=ns, encoding_num=trg_encoding_num)
         # calc middle representation
         diff = None
         if use_mid and batch.mid_flag:
             p = proportion
             mid_encoded = self.calc_encode(batch, is_src=False, is_mega=False, is_mid=True)
-            similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded, self.bilinear_mid, split=False, pieces=0, negative_sample=ns, encoding_num=mid_encoding_num)
+            similarity_src_mid = self.similarity_measure(src_encoded, mid_encoded,
+                                                         is_src_trg=False, split=False, pieces=0, negative_sample=ns, encoding_num=mid_encoding_num)
             cur_batch_size =similarity.shape[0]
             similarity[:, 1:int(cur_batch_size * p)] =\
                 similarity_src_mid[:, 1:int(cur_batch_size * p)]
@@ -135,6 +144,12 @@ class Encoder(nn.Module):
 
     def calc_encode(self, *args, **kwargs)->torch.Tensor:
         pass
+
+    def set_similarity_matrix(self):
+        self.similarity_measure.set_src_trg_bl(self.src_trg_bl)
+        self.similarity_measure.set_src_mid_bl(self.src_mid_bl)
+        self.similarity_measure.set_src_affine(self.src_affine)
+        self.similarity_measure.set_trg_affine(self.trg_affine)
 
 
 class BaseDataLoader:
@@ -464,7 +479,8 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
     all_trg_encodings = all_trg_encodings[:n]
     # calculate similarity`
     # [dev_size, dev_size + kb_size]
-    scores = similarity_measure(src_encodings, all_trg_encodings, model.bilinear, split=True, pieces=10, negative_sample=None, encoding_num=trg_encoding_num)
+    scores = similarity_measure(src_encodings, all_trg_encodings, is_src_trg=True, split=True,
+                                pieces=10, negative_sample=None, encoding_num=trg_encoding_num)
     encoding_scores = np.copy(scores)
     if use_mid:
         mid_KB_encodings = [[] for _ in range(mid_encoding_num)]
@@ -488,7 +504,8 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
         all_mid_encodings = all_mid_encodings[:n]
         all_mid_encodings = all_mid_encodings[:n]
 
-        mid_scores = similarity_measure(src_encodings, all_mid_encodings, model.bilinear_mid, split=True, pieces=10, negative_sample=None, encoding_num=mid_encoding_num)
+        mid_scores = similarity_measure(src_encodings, all_mid_encodings,
+                                        is_src_trg=False, split=True, pieces=10, negative_sample=None, encoding_num=mid_encoding_num)
         scores = np.maximum(scores, mid_scores)
 
     for entry_idx, entry_scores in enumerate(scores):

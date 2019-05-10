@@ -20,14 +20,14 @@ random.seed(0)
 
 print = functools.partial(print, flush=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-START_SYMBOL = "*"
-END_SYMBOL = "@"
+START_SYMBOL = "<s>"
+END_SYMBOL = "</s>"
 
-def get_ngram(string, ngram_list=(2, 3, 4)):
-    string = START_SYMBOL + string + END_SYMBOL
+def get_ngram(string, ngram_list=(2, 3, 4, 5)):
     all_ngrams = []
+    char_list = [START_SYMBOL] + list(string) + [END_SYMBOL]
     for n in ngram_list:
-        cur_ngram = zip(*[string[i:] for i in range(n)])
+        cur_ngram = zip(*[char_list[i:] for i in range(n)])
         cur_ngram = ["".join(x) for x in cur_ngram]
         all_ngrams += cur_ngram
     return all_ngrams
@@ -130,9 +130,8 @@ class DataLoader(BaseDataLoader):
     
 class Charagram(Encoder):
     def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure, use_mid, share_vocab, mid_vocab_size=0):
-        super(Charagram, self).__init__()
+        super(Charagram, self).__init__(embed_size)
         self.name = "charagram"
-        self.similarity_measure = similarity_measure
         self.src_vocab_size = src_vocab_size
         self.trg_vocab_size = trg_vocab_size
         self.mid_vocab_size = mid_vocab_size
@@ -152,11 +151,6 @@ class Charagram(Encoder):
         self.bias_trg = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
         torch.nn.init.constant_(self.bias_trg, 0.0)
 
-        # self.bilinear = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
-        # torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
-        self.bilinear = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
-
-
         if use_mid:
             if share_vocab:
                 self.mid_lookup = self.src_lookup
@@ -167,11 +161,9 @@ class Charagram(Encoder):
                 self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
                 torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
 
-            # self.bilinear_mid = nn.Parameter(torch.zeros((self.embed_size, self.embed_size)))
-            # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
-            self.bilinear_mid = nn.Parameter(torch.eye(self.embed_size), requires_grad=True)
-        else:
-            self.bilinear_mid = None
+
+        self.similarity_measure = similarity_measure
+
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
@@ -229,9 +221,8 @@ if __name__ == "__main__":
             model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
             model.load_state_dict(model["model_state_dict"])
             optimizer.load_state_dict(model["optimizer_state_dict"])
-            print(
-                "[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
-
+            print("[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
+        model.set_similarity_matrix()
         run(data_loader, model, criterion, optimizer, scheduler, similarity_measure, save_model, args)
     else:
         base_data_loader, intermedia_stuff = init_test(args, DataLoader)
@@ -243,8 +234,8 @@ if __name__ == "__main__":
                         use_mid=args.use_mid,
                         share_vocab=args.share_vocab,
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
-
         model.load_state_dict(model_info["model_state_dict"])
+        model.set_similarity_matrix()
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
                      args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.trg_encoding_num,
                      args.mid_encoding_num,

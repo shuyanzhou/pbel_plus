@@ -134,16 +134,12 @@ class DataLoader(BaseDataLoader):
 class LSTMEncoder(Encoder):
     def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure:Similarity,
                  use_mid, share_vocab, mid_vocab_size=0):
-        super(LSTMEncoder, self).__init__()
+        super(LSTMEncoder, self).__init__(hidden_size)
         self.name = "bilstm"
-        self.similarity_measure = similarity_measure
         self.src_vocab_size = src_vocab_size
         self.trg_vocab_size = trg_vocab_size
         self.embed_size = embed_size
         self.hidden_size = hidden_size
-        # self.bilinear = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-        # torch.nn.init.xavier_uniform_(self.bilinear, gain=1)
-        self.bilinear = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
         self.use_mid = use_mid
         self.share_vocab = share_vocab
         self.mid_vocab_size=mid_vocab_size
@@ -173,12 +169,8 @@ class LSTMEncoder(Encoder):
                 self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
                 self.mid_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
                 torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
-            # self.bilinear_mid = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-            # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
-            self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
-        else:
-            self.bilinear_mid = None
-            # self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+
+        self.similarity_measure = similarity_measure
 
     def reset_lstm_parameters(self, lstm):
         for name, param in lstm.state_dict().items():
@@ -262,6 +254,7 @@ if __name__ == "__main__":
             model.load_state_dict(model["model_state_dict"])
             optimizer.load_state_dict(model["optimizer_state_dict"])
             print("[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
+        model.set_similarity_matrix()
         run(data_loader, model, criterion, optimizer, scheduler, similarity_measure, save_model, args)
     else:
         base_data_loader, intermedia_stuff = init_test(args, DataLoader)
@@ -276,6 +269,7 @@ if __name__ == "__main__":
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
 
         model.load_state_dict(model_info["model_state_dict"])
+        model.set_similarity_matrix()
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
                      args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.trg_encoding_num,
                      args.mid_encoding_num, args.result_file, args.record_recall)
