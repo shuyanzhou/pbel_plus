@@ -175,10 +175,8 @@ class LSTMEncoder(Encoder):
                 torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
             # self.bilinear_mid = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
             # torch.nn.init.xavier_uniform_(self.bilinear_mid, gain=1)
-            self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
-        else:
-            self.bilinear_mid = None
-            # self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+            # self.bilinear_mid = None
+        self.bilinear_mid = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
 
     def reset_lstm_parameters(self, lstm):
         for name, param in lstm.state_dict().items():

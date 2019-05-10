@@ -392,7 +392,8 @@ def list2nparr(all_lists:List[List], hidden_size:int, merge=False):
 
 def calc_batch_loss(model, criterion, batch: BaseBatch, proportion, trg_encoding_num, mid_encoding_num):
     # src_tensor, src_lens, src_perm_idx, trg_tensor, trg_kb_id, trg_lens, trg_perm_idx
-    similarity, diff = model.calc_batch_similarity(batch, use_negative=True, use_mid=True, proportion=proportion, trg_encoding_num=trg_encoding_num, mid_encoding_num=mid_encoding_num)
+    similarity, diff = model.calc_batch_similarity(batch, use_negative=True, use_mid=True,
+                                                   proportion=proportion, trg_encoding_num=trg_encoding_num, mid_encoding_num=mid_encoding_num)
     if diff is not None:
         loss = criterion(similarity) + diff
     else:
