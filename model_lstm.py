@@ -268,7 +268,7 @@ if __name__ == "__main__":
                         share_vocab=args.share_vocab,
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
 
-        model.load_state_dict(model_info["model_state_dict"])
+        model.load_state_dict(model_info["model_state_dict"], strict=False)
         model.set_similarity_matrix()
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
                      args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.trg_encoding_num,

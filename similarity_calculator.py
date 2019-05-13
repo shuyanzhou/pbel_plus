@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+import time
+import gc
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Similarity:
@@ -25,22 +27,22 @@ class Similarity:
     def set_trg_affine(self, t: torch.Tensor):
         self.trg_affine = t
 
-    # def split_large_matrix(self, matrix:np.ndarray, pieces):
-    #     k, m = divmod(matrix.shape[0], pieces)
-    #     for i in range(pieces):
-    #         cur_matrix = matrix[i * k + min(i, m):(i + 1) * k + min(i + 1, m)]
-    #         cur_matrix = torch.from_numpy(cur_matrix).to(device).float()
-    #         yield cur_matrix
-
     def split_large_matrix(self, matrix:np.ndarray, pieces):
-        batch_size = matrix.shape[0] // pieces
-        tot = matrix.shape[0]
-        for _ in range(0, tot, batch_size):
-            cur_batch_size = min(batch_size, matrix.shape[0])
-            cur_matrix = matrix[:cur_batch_size]
+        k, m = divmod(matrix.shape[0], pieces)
+        for i in range(pieces):
+            cur_matrix = matrix[i * k + min(i, m):(i + 1) * k + min(i + 1, m)]
             cur_matrix = torch.from_numpy(cur_matrix).to(device).float()
-            matrix = np.delete(matrix, [x for x in range(cur_batch_size)], axis=0)
             yield cur_matrix
+
+    # def split_large_matrix(self, matrix:np.ndarray, pieces):
+    #     batch_size = matrix.shape[0] // pieces
+    #     tot = matrix.shape[0]
+    #     for _ in range(0, tot, batch_size):
+    #         cur_batch_size = min(batch_size, matrix.shape[0])
+    #         cur_matrix = matrix[:cur_batch_size]
+    #         cur_matrix = torch.from_numpy(cur_matrix).to(device).float()
+    #         matrix = np.delete(matrix, [x for x in range(cur_batch_size)], axis=0)
+    #         yield cur_matrix
 
     def calc_cosine_similarity(self, src_encoded, trg_encoded):
         src_norm = torch.norm(src_encoded, dim=1, keepdim=True)
@@ -50,20 +52,22 @@ class Similarity:
         similarity = torch.matmul(src_norm_encoded, torch.transpose(trg_norm_encoded, 1, 0))
         return similarity
 
-    def calc_cosine_similarity_split(self, src_encoded, trg_encoded, pieces):
+    def calc_cosine_similarity_split(self, src_encoded, trg_encoded, pieces, stack_result=True):
         src_encoded = torch.from_numpy(src_encoded).to(device).float()
         src_norm = torch.norm(src_encoded, dim=1, keepdim=True)
         src_norm_encoded = src_encoded / src_norm
         # split target to 10 pieces
         similarity_collection = []
-        for cur_trg_encoded in self.split_large_matrix(trg_encoded, pieces):
+        for idx, cur_trg_encoded in enumerate(self.split_large_matrix(trg_encoded, pieces)):
             cur_trg_norm = torch.norm(cur_trg_encoded, dim=1, keepdim=True)
             cur_trg_norm_encoded = cur_trg_encoded / cur_trg_norm
             # [src_size, piece_size]
             similarity = torch.matmul(src_norm_encoded, torch.transpose(cur_trg_norm_encoded, 1, 0))
-            similarity_collection.append(similarity.detach().cpu().numpy())
-        # concatenate
-        similarity_collection = np.hstack(tuple(similarity_collection))
+            similarity_collection.append(similarity.cpu().numpy())
+        print("[INFO] done calculating similarity")
+        if stack_result:
+            # concatenate
+            similarity_collection = np.hstack(tuple(similarity_collection))
         return similarity_collection
     
     def calc_linear_cosine(self, src_encoded, trg_encoded, is_src_trg):
@@ -75,13 +79,14 @@ class Similarity:
             trg = trg_encoded
         return self.calc_cosine_similarity(src, trg)
 
-    def calc_linear_cosine_split(self, src_encoded, trg_encoded, is_src_trg, pieces):
+    def calc_linear_cosine_split(self, src_encoded, trg_encoded, is_src_trg, pieces, stack_result=True):
         src_encoded = torch.from_numpy(src_encoded).to(device).float()
         similarity_collection = []
         for cur_trg_encoded in self.split_large_matrix(trg_encoded, pieces):
             similarity = self.calc_linear_cosine(src_encoded, cur_trg_encoded, is_src_trg)
-            similarity_collection.append(similarity.detach().cpu().numpy())
-        similarity_collection = np.hstack(tuple(similarity_collection))
+            similarity_collection.append(similarity.cpu().numpy())
+        if stack_result:
+            similarity_collection = np.hstack(tuple(similarity_collection))
         return similarity_collection
 
     def calc_bilinear(self, src_encoded, trg_encoded, is_src_trg):
@@ -92,7 +97,7 @@ class Similarity:
         bilinear_score = torch.mm(src_encoded, torch.mm(bl_tensor, torch.transpose(trg_encoded, 1, 0)))
         return bilinear_score
 
-    def calc_bilinear_split(self, src_encoded, trg_encoded, is_src_trg, pieces):
+    def calc_bilinear_split(self, src_encoded, trg_encoded, is_src_trg, pieces, stack_result=True):
         if is_src_trg:
             bl_tensor = self.src_trg_bl
         else:
@@ -103,14 +108,15 @@ class Similarity:
         similarity_collection = []
         for cur_trg_encoded in self.split_large_matrix(trg_encoded, pieces):
             similarity = torch.mm(src_encoded, torch.mm(bl_tensor, torch.transpose(cur_trg_encoded, 1, 0)))
-            similarity_collection.append(similarity.detach().cpu().numpy())
-        # concatenate
-        similarity_collection = np.hstack(tuple(similarity_collection))
+            similarity_collection.append(similarity.cpu().numpy())
+        if stack_result:
+            # concatenate
+            similarity_collection = np.hstack(tuple(similarity_collection))
         return similarity_collection
 
     def __call__(self, src_encoded:np.ndarray, trg_encoded:np.ndarray,
                  is_src_trg,
-                 split, pieces, negative_sample, encoding_num):
+                 split, pieces, negative_sample, encoding_num, stack_result=True):
         '''
         :param negative_sample: it is not None only during TRAINING (calc_batch_similarity with has negative_sample on)
         the resulted similarity matrix is sent to criterion for use.
@@ -136,11 +142,11 @@ class Similarity:
                 M, _ = torch.max(con_M, dim=2)
         else: # here the returned matrix is numpy
             if self.method == "cosine":
-                M =  self.calc_cosine_similarity_split(src_encoded, trg_encoded, pieces)
+                M =  self.calc_cosine_similarity_split(src_encoded, trg_encoded, pieces, stack_result)
             elif self.method == "bl":
-                M = self.calc_bilinear_split(src_encoded, trg_encoded, is_src_trg, pieces)
+                M = self.calc_bilinear_split(src_encoded, trg_encoded, is_src_trg, pieces, stack_result)
             elif self.method == "lcosine":
-                M = self.calc_linear_cosine_split(src_encoded, trg_encoded, is_src_trg, pieces)
+                M = self.calc_linear_cosine_split(src_encoded, trg_encoded, is_src_trg, pieces, stack_result)
             else:
                 raise NotImplementedError
             # find the version with highest score

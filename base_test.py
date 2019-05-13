@@ -76,14 +76,14 @@ def exact_match(original_scores, test_data_plain, kb_entity_strings):
     return updated_scores
 
 
+
 def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, test_data_plain:list,
                 kb_encodings:np.ndarray, kb_ids:np.ndarray, kb_entity_string:list,
                 intermediate_info:dict,
                 method, similarity_calculator: Similarity,
                 save_files:dict, trg_encoding_num, mid_encoding_num, topk_list = (1, 2, 5, 10, 30),
                 record_recall=False, use_exact_match=True):
-    #TODO change exact_match back
-    pieces=500
+    pieces=1000
     # no pivoting, base method
     tot = float(test_data_encodings.shape[0])
     # base method

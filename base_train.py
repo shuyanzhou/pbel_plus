@@ -104,6 +104,10 @@ class Encoder(nn.Module):
         self.hidden_size = hidden_size
         self.src_trg_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
         self.src_mid_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+        # self.src_trg_bl = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        # self.src_mid_bl = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        # nn.init.xavier_uniform_(self.src_trg_bl, gain=1)
+        # nn.init.xavier_uniform_(self.src_mid_bl, gain=1)
         self.src_affine = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
         nn.init.xavier_uniform_(self.src_affine, gain=1)
         self.trg_affine = nn.Parameter(torch.zeros(self.hidden_size, self.hidden_size))
@@ -576,6 +580,7 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                 # set all but forget gate bias to 0
                 reset_bias(encoder.src_lstm)
                 reset_bias(encoder.trg_lstm)
+                # pass
 
             batch_num += 1
         print("[INFO] epoch {:d}: train loss={:.8f}, time={:.2f}".format(ep, train_loss / batch_num,
