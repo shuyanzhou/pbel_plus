@@ -16,10 +16,10 @@ from criterion import NSHingeLoss, MultiMarginLoss, CrossEntropyLoss
 from collections import defaultdict
 from itertools import combinations
 
-
-torch.manual_seed(0)
-np.random.seed(0)
-random.seed(0)
+random_seed=0
+torch.manual_seed(random_seed)
+np.random.seed(random_seed)
+random.seed(random_seed)
 
 print = functools.partial(print, flush=True)
 PATIENT = 50
@@ -102,16 +102,16 @@ class Encoder(nn.Module):
     def __init__(self, hidden_size):
         super(Encoder, self).__init__()
         self.hidden_size = hidden_size
-        self.src_trg_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
-        self.src_mid_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
-        # self.src_trg_bl = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-        # self.src_mid_bl = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-        # nn.init.xavier_uniform_(self.src_trg_bl, gain=1)
-        # nn.init.xavier_uniform_(self.src_mid_bl, gain=1)
+        #self.src_trg_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+        #self.src_mid_bl = nn.Parameter(torch.eye(self.hidden_size), requires_grad=True)
+        self.src_trg_bl = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        self.src_mid_bl = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
+        torch.nn.init.xavier_uniform_(self.src_trg_bl, gain=1)
+        torch.nn.init.xavier_uniform_(self.src_mid_bl, gain=1)
         self.src_affine = nn.Parameter(torch.zeros((self.hidden_size, self.hidden_size)))
-        nn.init.xavier_uniform_(self.src_affine, gain=1)
+        torch.nn.init.xavier_uniform_(self.src_affine, gain=1)
         self.trg_affine = nn.Parameter(torch.zeros(self.hidden_size, self.hidden_size))
-        nn.init.xavier_uniform_(self.trg_affine, gain=1)
+        torch.nn.init.xavier_uniform_(self.trg_affine, gain=1)
 
     def calc_batch_similarity(self, batch:BaseBatch, trg_encoding_num, mid_encoding_num, proportion, use_negative=False, use_mid=False):
         #[batch_size, hidden_state]
@@ -476,8 +476,8 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
 
     # TODO might need it in the future
     # prune KB_encodings so that all entities are unique
-    # unique_kb_idx = get_unique_kb_idx(KB_ids)
-    # KB_encodings = KB_encodings[unique_kb_idx]
+    unique_kb_idx = get_unique_kb_idx(KB_ids)
+    KB_encodings = [x[unique_kb_idx] for x in KB_encodings]
 
     all_trg_encodings = merge_encodings(trg_encodings, KB_encodings)
     n = max(all_trg_encodings.shape[0], 160000)
@@ -512,7 +512,6 @@ def eval_data(model: Encoder, train_batches:List[BaseBatch], dev_batches: List[B
         mid_scores = similarity_measure(src_encodings, all_mid_encodings,
                                         is_src_trg=False, split=True, pieces=10, negative_sample=None, encoding_num=mid_encoding_num)
         scores = np.maximum(scores, mid_scores)
-
     for entry_idx, entry_scores in enumerate(scores):
         ranked_idxes = entry_scores.argsort()[::-1]
         # the correct index is entry_idx
@@ -548,7 +547,7 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
     last_update = 0
     dev_arg_dict = {
         "use_mid": args.use_mid,
-        "topk": 30,
+        "topk": 1,
         "trg_encoding_num": args.trg_encoding_num,
         "mid_encoding_num": args.mid_encoding_num
     }

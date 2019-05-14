@@ -13,9 +13,9 @@ from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train,
 from base_test import init_test, eval_dataset
 from config import argps
 from similarity_calculator import Similarity
-
-torch.manual_seed(0)
-random.seed(0)
+random_seed = 0
+torch.manual_seed(random_seed)
+random.seed(random_seed)
 
 
 PP_VEC_SIZE = 22
@@ -183,7 +183,10 @@ class LSTMEncoder(Encoder):
                     param.copy_(p)
                 else:
                     nn.init.constant_(param, 0.0)
-
+                # p = torch.zeros_like(param)
+                # # set two forget gate bias to 0.5
+                # p[512:1024] = 0.5
+                # param.copy_(p)
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch

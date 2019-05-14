@@ -10,10 +10,10 @@ from base_train import BaseDataLoader, Encoder, FileInfo, list2nparr, append_mul
 from similarity_calculator import Similarity
 from typing import List
 
-
-torch.manual_seed(0)
-np.random.seed(0)
-random.seed(0)
+random_seed = 0
+torch.manual_seed(random_seed)
+np.random.seed(random_seed)
+random.seed(random_seed)
 
 
 PP_VEC_SIZE = 22

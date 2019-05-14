@@ -5,7 +5,8 @@
 *.npy
 *.txt
 *.tmp
-log/*
-__pycache__/*
-data/*
-.idea/*
+log/
+__pycache__/
+data/
+.idea/
+*.pyc
