@@ -9,15 +9,9 @@ import time
 from base_train import BaseDataLoader, Encoder, FileInfo, list2nparr, append_multiple_encodings, merge_encodings
 from similarity_calculator import Similarity
 from typing import List
+from utils.constant import RANDOM_SEED, PP_VEC_SIZE, DEVICE
 
-random_seed = 0
-torch.manual_seed(random_seed)
-np.random.seed(random_seed)
-random.seed(random_seed)
-
-
-PP_VEC_SIZE = 22
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = DEVICE
 print = functools.partial(print, flush=True)
 # load data for ONE side (e.g KB or test data)
 

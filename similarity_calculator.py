@@ -2,7 +2,8 @@ import torch
 import numpy as np
 import time
 import gc
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from utils.constant import DEVICE
+device = DEVICE
 
 class Similarity:
     '''

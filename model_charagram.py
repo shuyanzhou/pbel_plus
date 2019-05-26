@@ -13,13 +13,15 @@ from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train,
 from base_test import init_test, eval_dataset
 from config import argps
 from similarity_calculator import Similarity
+from utils.constant import DEVICE, RANDOM_SEED
 
 
-torch.manual_seed(0)
-random.seed(0)
-
+random_seed = RANDOM_SEED
+torch.manual_seed(random_seed)
+random.seed(random_seed)
 print = functools.partial(print, flush=True)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = DEVICE
+
 START_SYMBOL = "<s>"
 END_SYMBOL = "</s>"
 

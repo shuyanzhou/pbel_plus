@@ -15,17 +15,10 @@ from typing import List, Generator
 from criterion import NSHingeLoss, MultiMarginLoss, CrossEntropyLoss
 from collections import defaultdict
 from itertools import combinations
-
-random_seed=5678
-torch.manual_seed(random_seed)
-np.random.seed(random_seed)
-random.seed(random_seed)
+from utils.constant import RANDOM_SEED, PATIENT, EPOCH_CHECK, DEVICE
 
 print = functools.partial(print, flush=True)
-PATIENT = 50
-EPOCH_CHECK = 2
-PP_VEC_SIZE = 22
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = DEVICE
 
 class BaseBatch:
     def __init__(self):

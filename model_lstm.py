@@ -13,13 +13,12 @@ from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train,
 from base_test import init_test, eval_dataset
 from config import argps
 from similarity_calculator import Similarity
-random_seed = 0
+from utils.constant import  RANDOM_SEED, DEVICE, PP_VEC_SIZE
+
+random_seed = RANDOM_SEED
 torch.manual_seed(random_seed)
 random.seed(random_seed)
-
-
-PP_VEC_SIZE = 22
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = DEVICE
 
 class Batch(BaseBatch):
     def set_src(self, src_tensor, src_lens, src_perm_idx, src_gold_kb_ids):
@@ -257,6 +256,14 @@ if __name__ == "__main__":
             model.load_state_dict(model["model_state_dict"])
             optimizer.load_state_dict(model["optimizer_state_dict"])
             print("[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
+
+        model_info = torch.load("/Users/alexisxy/Workshop/research/pbel/data/init_model")
+        model_dict = model_info["model_state_dict"]
+        model_dict["src_trg_bl"] = model_dict.pop("bilinear")
+        model_dict["src_mid_bl"] = model_dict.pop("bilinear_mid")
+        model_dict["src_affine"] = nn.Parameter(torch.zeros((1024, 1024)))
+        model_dict["trg_affine"] = nn.Parameter(torch.zeros((1024, 1024)))
+        model.load_state_dict(model_dict)
         model.set_similarity_matrix()
         run(data_loader, model, criterion, optimizer, scheduler, similarity_measure, save_model, args)
     else:

@@ -3,10 +3,6 @@ from torch import nn
 import torch.nn.functional as F
 import numpy as np
 
-random_seed = 0
-torch.manual_seed(random_seed)
-np.random.seed(random_seed)
-
 '''
 this class will play more efficient negative sampling than take all samples in the batch as negative
 for each sample, it only consider up to n negative samples in the batch, these samplings are more similar than others in the batch
