@@ -16,7 +16,7 @@ from criterion import NSHingeLoss, MultiMarginLoss, CrossEntropyLoss
 from collections import defaultdict
 from itertools import combinations
 
-random_seed=0
+random_seed=5678
 torch.manual_seed(random_seed)
 np.random.seed(random_seed)
 random.seed(random_seed)

@@ -83,7 +83,7 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
                 method, similarity_calculator: Similarity,
                 save_files:dict, trg_encoding_num, mid_encoding_num, topk_list = (1, 2, 5, 10, 30),
                 record_recall=False, use_exact_match=True):
-    pieces=1000
+    pieces=100
     # no pivoting, base method
     tot = float(test_data_encodings.shape[0])
     # base method
@@ -91,6 +91,12 @@ def calc_result(test_data_encodings:np.ndarray, test_gold_kb_ids:np.ndarray, tes
     base_result_file = open(save_files["no_pivot"], "w+", encoding="utf-8")
     base_result_string_file = open(save_files["no_pivot_str"], "w+", encoding="utf-8")
     base_files = [base_result_file, base_result_string_file]
+
+    # split_kb_encodings = np.split(kb_encodings, trg_encoding_num, axis=0)
+    # kb_size = split_kb_encodings[0].shape[0]
+    # base_scores = np.zeros((tot, kb_size)) - 10000
+    # st_time = time.time()
+    # for cur_kb_encodings in split_kb_encodings:
     base_scores = similarity_calculator(test_data_encodings, kb_encodings,
                                         is_src_trg=True, split=True, pieces=pieces, negative_sample=None, encoding_num=trg_encoding_num)
     # calc exact match
