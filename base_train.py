@@ -15,7 +15,7 @@ from typing import List, Generator
 from criterion import NSHingeLoss, MultiMarginLoss, CrossEntropyLoss
 from collections import defaultdict
 from itertools import combinations
-from utils.constant import RANDOM_SEED, PATIENT, EPOCH_CHECK, DEVICE
+from utils.constant import RANDOM_SEED, PATIENT, EPOCH_CHECK, DEVICE, UPDATE_PATIENT
 
 print = functools.partial(print, flush=True)
 device = DEVICE
@@ -151,7 +151,7 @@ class Encoder(nn.Module):
 
 class BaseDataLoader:
         def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, pad_str,
-                     train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo, trg_encoding_num, mid_encoding_num):
+                     train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo, trg_encoding_num, mid_encoding_num, alia_file):
             self.batch_size = batch_size
             self.train_file = train_file
             self.dev_file = dev_file
@@ -167,6 +167,7 @@ class BaseDataLoader:
             self.share_vocab = share_vocab
             self.trg_encoding_num = trg_encoding_num
             self.mid_encoding_num = mid_encoding_num
+            self.load_alia_map(alia_file)
             if is_train:
                 self.init_train()
             else:
@@ -251,6 +252,40 @@ class BaseDataLoader:
                 self.test_trg = list(self.load_data(self.test_file.trg_file_name, self.test_file.trg_str_idx, self.test_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.test_file.trg_type_idx))
             if self.test_file.mid_file_name is not None:
                 self.test_mid = list(self.load_data(self.test_file.mid_file_name, self.test_file.mid_str_idx, self.test_file.mid_id_idx, is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.test_file.mid_type_idx))
+
+
+        def load_alia_map(self, fname):
+            self.title_alia_map = defaultdict(list)
+            self.id_alia_map = defaultdict(list)
+            with open(fname, "r", encoding="utf-8") as f:
+                 for line in f:
+                    tks = line.strip().split(" ||| ")
+                    if len(tks) != 4:
+                        continue
+                    aka = tks[3].split(" || ")
+                    self.title_alia_map[tks[2]] = aka
+                    if tks[1] != "NAN":
+                        self.id_alia_map[tks[1]] = aka
+            print(f"[INFO] there are {len(self.title_alia_map)} / {len(self.id_alia_map)} items in aka")
+
+
+        def get_alias(self, tks, str_idx, id_idx, encoding_num):
+            id = tks[id_idx]
+            title = tks[str_idx]
+            alias = self.title_alia_map.get(title, []) + self.id_alia_map.get(id, [])
+            alias = [x for x in alias if x != title]
+
+            if len(alias) < encoding_num:
+                alias = [title for x in range(encoding_num - len(alias))] + alias
+            # randomly select encoding num - 1 alias
+            else:
+                selected_idx = np.random.choice(len(alias), encoding_num - 1, replace=False)
+                alias = [alias[x] for x in selected_idx]
+                alias = [title] + alias
+
+            assert len(alias) == encoding_num
+
+            return alias
 
         def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx):
             pass
@@ -540,13 +575,13 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
     last_update = 0
     dev_arg_dict = {
         "use_mid": args.use_mid,
-        "topk": 1,
+        "topk": args.val_topk,
         "trg_encoding_num": args.trg_encoding_num,
         "mid_encoding_num": args.mid_encoding_num
     }
-    lr_decay = scheduler is not None
-    if lr_decay:
-        print("[INFO] using learning rate decay")
+    # lr_decay = scheduler is not None
+    # if lr_decay:
+    #     print("[INFO] using learning rate decay")
     for ep in range(args.max_epoch):
         encoder.train()
         train_loss = 0.0
@@ -559,12 +594,17 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
             else:
                 train_batches = data_loader.create_megabatch(encoder)
         batch_num = 0
+        t = 0
         for idx, batch in enumerate(train_batches):
             optimizer.zero_grad()
             cur_loss = calc_batch_loss(encoder, criterion, batch, args.mid_proportion, args.trg_encoding_num, args.mid_encoding_num)
             train_loss += cur_loss.item()
             cur_loss.backward()
             # optimizer.step()
+
+            for p in list(filter(lambda p: p.grad is not None, encoder.parameters())):
+                t += p.grad.data.norm(2).item()
+
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), max_norm=5)
             optimizer.step()
 
@@ -573,10 +613,10 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                 reset_bias(encoder.src_lstm)
                 reset_bias(encoder.trg_lstm)
                 # pass
-
             batch_num += 1
         print("[INFO] epoch {:d}: train loss={:.8f}, time={:.2f}".format(ep, train_loss / batch_num,
                                                                          time.time()-start_time))
+        # print(t)
 
         if (ep + 1) % EPOCH_CHECK == 0:
             with torch.no_grad():
@@ -593,18 +633,26 @@ def run(data_loader: BaseDataLoader, encoder: Encoder, criterion, optimizer: opt
                     best_accs["encode_acc"] = dev_encode_acc
                     best_accs["pivot_acc"] = dev_pivot_acc
                     last_update = ep + 1
-                    save_model(encoder, ep + 1, train_loss, optimizer, args.model_path + "_" + "best" + ".tar")
-                save_model(encoder, ep + 1, train_loss, optimizer, args.model_path + "_" + "last" + ".tar")
+                    save_model(encoder, ep + 1, train_loss / batch_num, optimizer, args.model_path + "_" + "best" + ".tar")
+                save_model(encoder, ep + 1, train_loss / batch_num, optimizer, args.model_path + "_" + "last" + ".tar")
                 print("[INFO] epoch {:d}: encoding/pivoting dev acc={:.4f}/{:.4f}, time={:.2f}".format(
                                                                                             ep, dev_encode_acc, dev_pivot_acc,
                                                                                             time.time()-start_time))
+                if args.lr_decay and ep + 1 - last_update > UPDATE_PATIENT:
+                    new_lr = optimizer.param_groups[0]['lr'] * args.lr_scaler
+                    best_info  = torch.load(args.model_path + "_" + "best" + ".tar")
+                    encoder.load_state_dict(best_info["model_state_dict"])
+                    optimizer.load_state_dict(best_info["optimizer_state_dict"])
+                    optimizer.param_groups[0]['lr'] = new_lr
+                    print("[INFO] reload best model ..")
+
                 if ep + 1 - last_update > PATIENT:
                     print("[FINAL] in epoch {}, the best develop encoding/pivoting accuracy = {:.4f}/{:.4f}".format(ep + 1,
                                                                                                                     best_accs["encode_acc"],
                                                                                                                     best_accs["pivot_acc"]))
                     break
-        if lr_decay:
-            scheduler.step()
+        # if lr_decay:
+        #     scheduler.step()
 
 def init_train(args, DataLoader):
     train_file = FileInfo()
@@ -632,10 +680,15 @@ def create_optimizer(trainer, lr, model, lr_decay=False):
         optimizer = optim.Adam(model.parameters(), lr)
     elif trainer == "sgd":
         optimizer = optim.SGD(model.parameters(), lr)
+    elif trainer == "sgd_mo":
+        optimizer = optim.SGD(model.parameters(), lr, momentum=0.9)
+    elif trainer == "rmsp":
+        optimizer = optim.RMSprop(model.parameters(), lr)
     else:
         raise NotImplementedError
-    if lr_decay:
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[15, 50, 100], gamma=0.3)
-    else:
-        scheduler = None
+    # if lr_decay:
+    #     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[15, 50, 100], gamma=0.3)
+    # else:
+    #     scheduler = None
+    scheduler = None
     return optimizer, scheduler

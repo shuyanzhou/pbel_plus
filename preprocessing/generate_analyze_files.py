@@ -2,7 +2,10 @@ import os
 import sys
 import epitran
 from collections import defaultdict, Counter
+import numpy as np
 
+
+PIVOT = ""
 # get KB type map
 def get_type_map():
     kb_file = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/kb_split/en_kb"
@@ -35,22 +38,43 @@ def get_analysis_file(lang, model):
     entity_type_map, id_name_map = get_type_map()
     base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
     gold_file = os.path.join(base_path, "data", "unique_mend_ee_test_en-{}_links".format(lang))
-    result_file = os.path.join(base_path, "results", "unique_mend_ee_pivot_en-{}_{}.id".format(lang, model))
-    new_result_file = os.path.join(base_path, "results", "analysis", "unique_mend_ee_pivot_en-{}_{}.anl".format(lang, model))
+    result_file = os.path.join(base_path, "results", "unique_mend_ee_{}en-{}_{}.id".format(PIVOT, lang, model))
+    new_result_file = os.path.join(base_path, "results", "analysis", "unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model))
+
+    tot = 0
+    recall_dict = {'1': 0, '2': 0, '5': 0, '10': 0, '20': 0, '30': 0}
+
     with open(gold_file, "r", encoding="utf-8") as fg:
         with open(result_file, "r", encoding="utf-8") as fr:
             with open(new_result_file, "w+", encoding="utf-8") as fout:
                 for gold_line, result_line in zip(fg, fr):
+                    tot += 1
                     gold_en_string, mention = gold_line.strip().split(" ||| ")[1:3]
                     gold_type = entity_type_map[gold_en_string]
                     _, entity_info = result_line.split(" ||| ")
                     mention_ipa = epi.transliterate(mention)
                     entity_info = [x.split(" | ") for x in entity_info.split(" || ")]
                     entity_ids = [x[0] for x in entity_info]
+                    entity_scores = [float(x[1]) for x in entity_info]
+                    # remove duplicate
+                    entity_max_score = defaultdict(float)
+                    for eid, escore in zip(entity_ids, entity_scores):
+                        entity_max_score[eid] = max(entity_max_score[eid], escore)
+                    entity_ids = [*entity_max_score]
+                    scores = [entity_max_score[x] for x in entity_ids]
+                    sort_idx = np.argsort(np.array(scores))[::-1]
+                    sort_idx = sort_idx[:30]
+                    entity_ids = [entity_ids[x] for x in sort_idx]
                     entity_strings = [id_name_map[x] for x in entity_ids]
-                    # find entity strings
-                    score = [x[1] for x in entity_info]
                     fout.write(gold_type + " ||| " + gold_en_string + " ||| " + mention_ipa + " ||| " + mention + " ||| " + " || ".join(entity_strings) + "\n")
+
+                    for topk in recall_dict.keys():
+                        topk = int(topk)
+                        if gold_en_string in entity_strings[:topk]:
+                            recall_dict[str(topk)] += 1
+
+    for topk, recall in recall_dict.items():
+        print("[INFO] top {}: {:.2f}/{:.2f}={:.4f}".format(topk, recall, tot, recall / tot))
 
 
 def get_diff(f1, f2, fdiff):
@@ -116,9 +140,9 @@ if __name__ == "__main__":
         model2 = sys.argv[3]
     # get_analysis_file(lang, model)
     # get_analysis_file(lang, model2)
-    get_diff("unique_mend_ee_pivot_en-{}_{}.anl".format(lang, model),
-             "unique_mend_ee_pivot_en-{}_{}.anl".format(lang, model2),
-             "unique_mend_ee_pivot_en-{}_{}-{}.diff".format(lang, model, model2))
+    get_diff("unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model),
+             "unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model2),
+             "unique_mend_ee_{}en-{}_{}-{}.diff".format(PIVOT, lang, model, model2))
     # base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
     # result_file = os.path.join(base_path, "results", "analysis", "unique_mend_ee_en-{}_{}.anl".format(lang, model))
     # bucket_result(result_file, "length")

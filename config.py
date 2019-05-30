@@ -47,7 +47,8 @@ def argps():
     parser.add_argument("--trg_idx", help="KB entity string index", type=int, default=1)
     parser.add_argument("--trg_id_idx", help="KB id index", type=int, default=0)
     parser.add_argument("--use_panphon", type=str2bool, default=False)
-    
+    parser.add_argument("--val_topk", type=int, default=1)
+
     # training details
     parser.add_argument("--similarity_measure", choices=("cosine", "bl", "lcosine"), required=True)
     parser.add_argument("--objective", choices=("hinge", "mle"), required=True)
@@ -55,9 +56,10 @@ def argps():
     parser.add_argument("--embed_size", type=int, default=64)
     parser.add_argument("--hidden_size", help="bi-direction", type=int, default=1024)
     parser.add_argument("--margin", type=int, default=1)
-    parser.add_argument("--trainer", choices=('adam', 'sgd'))
+    parser.add_argument("--trainer", choices=('adam', 'sgd', 'sgd_mo', 'rmsp'))
     parser.add_argument("--learning_rate", type=float)
     parser.add_argument("--lr_decay", type=str2bool, default=False)
+    parser.add_argument("--lr_scaler", type=float)
     parser.add_argument("--max_epoch", type=int, default=200)
 
     # test

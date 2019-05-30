@@ -93,7 +93,7 @@ class DataLoader(BaseDataLoader):
     def new_batch(self):
         return Batch()
 
-    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx, auto_encoding):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
@@ -104,12 +104,22 @@ class DataLoader(BaseDataLoader):
                     string = [x2i_map[char] for char in tks[str_idx]]
                     string = [string]
                 else:
-                    all_string = []
-                    for i in range(encoding_num):
-                        string = [x2i_map[char] for char in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + list(tks[str_idx])]
-                        # string = [x2i_map[char] for char in list(tks[str_idx])]
-                        all_string.append(string)
-                    string = all_string
+                    # multi version
+                    if auto_encoding:
+                        all_string = []
+                        for i in range(encoding_num):
+                            string = [x2i_map[char] for char in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + list(tks[str_idx])]
+                            # string = [x2i_map[char] for char in list(tks[str_idx])]
+                            all_string.append(string)
+                        string = all_string
+                    else: # wikidata alias, only for KB
+                        all_string = []
+                        alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
+                        for i in range(encoding_num):
+                            string = [x2i_map[char] for char in alias[i]]
+                            all_string.apend(string)
+                        string = all_string
+
                 yield (string, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
 
@@ -253,17 +263,10 @@ if __name__ == "__main__":
         optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model, args.lr_decay)
         if args.finetune:
             model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
-            model.load_state_dict(model["model_state_dict"])
-            optimizer.load_state_dict(model["optimizer_state_dict"])
+            model.load_state_dict(model_info["model_state_dict"])
+            optimizer.load_state_dict(model_info["optimizer_state_dict"])
             print("[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
 
-        model_info = torch.load("/Users/alexisxy/Workshop/research/pbel/data/init_model")
-        model_dict = model_info["model_state_dict"]
-        model_dict["src_trg_bl"] = model_dict.pop("bilinear")
-        model_dict["src_mid_bl"] = model_dict.pop("bilinear_mid")
-        model_dict["src_affine"] = nn.Parameter(torch.zeros((1024, 1024)))
-        model_dict["trg_affine"] = nn.Parameter(torch.zeros((1024, 1024)))
-        model.load_state_dict(model_dict)
         model.set_similarity_matrix()
         run(data_loader, model, criterion, optimizer, scheduler, similarity_measure, save_model, args)
     else:
