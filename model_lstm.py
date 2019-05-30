@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch import optim
 import random
+import numpy as np
 import panphon as pp
 from  torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import pickle
@@ -18,6 +19,8 @@ from utils.constant import  RANDOM_SEED, DEVICE, PP_VEC_SIZE
 random_seed = RANDOM_SEED
 torch.manual_seed(random_seed)
 random.seed(random_seed)
+np.random.seed(random_seed)
+
 device = DEVICE
 
 class Batch(BaseBatch):
@@ -86,9 +89,13 @@ class Batch(BaseBatch):
 
 
 class DataLoader(BaseDataLoader):
-    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num):
-        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                                        "<UNK>", train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num)
+    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
+                 train_file, dev_file, test_file,
+                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file):
+        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, "<UNK>",
+                                        train_file, dev_file, test_file,
+                                        trg_encoding_num, mid_encoding_num,
+                                        trg_auto_encoding, mid_auto_encoding, alia_file)
 
     def new_batch(self):
         return Batch()
@@ -117,7 +124,7 @@ class DataLoader(BaseDataLoader):
                         alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
                         for i in range(encoding_num):
                             string = [x2i_map[char] for char in alias[i]]
-                            all_string.apend(string)
+                            all_string.append(string)
                         string = all_string
 
                 yield (string, tks[id_idx])

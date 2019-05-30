@@ -230,7 +230,9 @@ def init_test(args, DataLoader):
     test_file.set_trg(args.kb_file, args.kb_str_idx, args.kb_id_idx, args.kb_type_idx)
     base_data_loader = DataLoader(False, args.map_file, args.batch_size, args.mega_size,
                                   args.use_panphon, args.use_mid, args.share_vocab, train_file=None, dev_file=None, test_file=test_file,
-                                  trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num)
+                                  trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num,
+                                  trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding,
+                                  alia_file=args.alia_file)
     intermediate_stuff = []
     if args.method != "base":
         for stuff in args.intermediate_stuff:

@@ -23,7 +23,9 @@ def argps():
     parser.add_argument("--mid_type_idx", type=int, default=3)
     parser.add_argument("--kb_type_idx", type=int, default=2)
     parser.add_argument("--pivot_type_idx", type=int, default=3)
-
+    parser.add_argument("--trg_auto_encoding", type=str2bool, default=False)
+    parser.add_argument("--mid_auto_encoding", type=str2bool, default=False)
+    parser.add_argument("--alia_file", type=str)
     # mega batch
     parser.add_argument("--mega_size", type=int, default=40)
     parser.add_argument("--method", default="base")

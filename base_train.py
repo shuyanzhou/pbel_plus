@@ -151,7 +151,8 @@ class Encoder(nn.Module):
 
 class BaseDataLoader:
         def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, pad_str,
-                     train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo, trg_encoding_num, mid_encoding_num, alia_file):
+                     train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo,
+                     trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file):
             self.batch_size = batch_size
             self.train_file = train_file
             self.dev_file = dev_file
@@ -168,6 +169,8 @@ class BaseDataLoader:
             self.trg_encoding_num = trg_encoding_num
             self.mid_encoding_num = mid_encoding_num
             self.load_alia_map(alia_file)
+            self.trg_auto_encoding = trg_auto_encoding
+            self.mid_auto_encoding = mid_auto_encoding
             if is_train:
                 self.init_train()
             else:
@@ -179,8 +182,11 @@ class BaseDataLoader:
             # make sure pad is 0
             self.x2i_src[self.pad_str]
             self.x2i_trg[self.pad_str]
-            self.train_src = list(self.load_data(self.train_file.src_file_name, self.train_file.src_str_idx, self.train_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None))
-            self.train_trg = list(self.load_data(self.train_file.trg_file_name, self.train_file.trg_str_idx, self.train_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.train_file.trg_type_idx))
+            self.train_src = list(self.load_data(self.train_file.src_file_name, self.train_file.src_str_idx,
+                                                 self.train_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None, auto_encoding=False))
+            self.train_trg = list(self.load_data(self.train_file.trg_file_name, self.train_file.trg_str_idx,
+                                                 self.train_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num,
+                                                 type_idx=self.train_file.trg_type_idx, auto_encoding=self.trg_auto_encoding))
             # save map
             self.save_map(self.x2i_src, self.map_file + "_src.pkl")
             self.save_map(self.x2i_trg, self.map_file + "_trg.pkl")
@@ -192,7 +198,8 @@ class BaseDataLoader:
                     self.x2i_mid = defaultdict(lambda: len(self.x2i_mid))
                     self.x2i_mid[self.pad_str]
                 self.train_mid = list(self.load_data(self.train_file.mid_file_name, self.train_file.mid_str_idx, self.train_file.mid_id_idx,
-                                                     is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.train_file.mid_type_idx))
+                                                     is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.train_file.mid_type_idx,
+                                                     auto_encoding=self.mid_auto_encoding))
                 self.save_map(self.x2i_mid, self.map_file + "_mid.pkl")
                 self.mid_vocab_size = len(self.x2i_mid)
                 self.x2i_mid = defaultdict(lambda: self.x2i_mid[self.pad_str], self.x2i_mid)
@@ -209,13 +216,19 @@ class BaseDataLoader:
             self.x2i_trg = defaultdict(lambda: self.x2i_trg[self.pad_str], self.x2i_trg)
 
             if self.dev_file:
-                self.dev_src = list(self.load_data(self.dev_file.src_file_name, self.dev_file.src_str_idx, self.dev_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None))
-                self.dev_trg = list(self.load_data(self.dev_file.trg_file_name, self.dev_file.trg_str_idx, self.dev_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.dev_file.trg_type_idx))
+                self.dev_src = list(self.load_data(self.dev_file.src_file_name, self.dev_file.src_str_idx,
+                                                   self.dev_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None, auto_encoding=False))
+                self.dev_trg = list(self.load_data(self.dev_file.trg_file_name, self.dev_file.trg_str_idx,
+                                                   self.dev_file.trg_id_idx, is_src=False,
+                                                   encoding_num=self.trg_encoding_num, type_idx=self.dev_file.trg_type_idx,
+                                                   auto_encoding=self.trg_auto_encoding))
                 n = min(len(self.dev_src), 2000)
                 self.dev_src, self.dev_trg = self.dev_src[:n], self.dev_trg[:n]
                 if self.use_mid:
                     self.dev_mid = list(self.load_data(self.dev_file.mid_file_name, self.dev_file.mid_str_idx,
-                                                       self.dev_file.mid_id_idx, is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.dev_file.mid_type_idx))
+                                                       self.dev_file.mid_id_idx, is_src=False, is_mid=True,
+                                                       encoding_num=self.mid_encoding_num, type_idx=self.dev_file.mid_type_idx,
+                                                       auto_encoding=self.mid_auto_encoding))
                     self.dev_mid = self.dev_mid[:n]
                 else:
                     self.dev_mid = None
@@ -247,11 +260,20 @@ class BaseDataLoader:
             self.i2c_src = {v: k for k, v in self.x2i_src.items()}
             self.i2c_trg = {v: k for k, v in self.x2i_trg.items()}
             if self.test_file.src_file_name is not None:
-                self.test_src = list(self.load_data(self.test_file.src_file_name, self.test_file.src_str_idx, self.test_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None))
+                self.test_src = list(self.load_data(self.test_file.src_file_name,
+                                                    self.test_file.src_str_idx, self.test_file.src_id_idx,
+                                                    is_src=True, encoding_num=1, type_idx=None,
+                                                    auto_encoding=False))
             if self.test_file.trg_file_name is not None:
-                self.test_trg = list(self.load_data(self.test_file.trg_file_name, self.test_file.trg_str_idx, self.test_file.trg_id_idx, is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.test_file.trg_type_idx))
+                self.test_trg = list(self.load_data(self.test_file.trg_file_name,
+                                                    self.test_file.trg_str_idx, self.test_file.trg_id_idx,
+                                                    is_src=False, encoding_num=self.trg_encoding_num, type_idx=self.test_file.trg_type_idx,
+                                                    auto_encoding=self.trg_auto_encoding))
             if self.test_file.mid_file_name is not None:
-                self.test_mid = list(self.load_data(self.test_file.mid_file_name, self.test_file.mid_str_idx, self.test_file.mid_id_idx, is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.test_file.mid_type_idx))
+                self.test_mid = list(self.load_data(self.test_file.mid_file_name,
+                                                    self.test_file.mid_str_idx, self.test_file.mid_id_idx, is_src=False, is_mid=True,
+                                                    encoding_num=self.mid_encoding_num, type_idx=self.test_file.mid_type_idx,
+                                                    auto_encoding=self.mid_auto_encoding))
 
 
         def load_alia_map(self, fname):
@@ -287,17 +309,17 @@ class BaseDataLoader:
 
             return alias
 
-        def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx):
+        def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx, auto_encoding):
             pass
 
-        def load_data(self, file_name, str_idx, id_idx, is_src, encoding_num, type_idx, is_mid=False):
+        def load_data(self, file_name, str_idx, id_idx, is_src, encoding_num, type_idx, auto_encoding, is_mid=False):
             if is_src:
                 x2i_map = self.x2i_src
             else:
                 x2i_map = self.x2i_trg
             if is_mid:
                 x2i_map = self.x2i_mid
-            return self.load_all_data(file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx)
+            return self.load_all_data(file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx, auto_encoding)
 
         def transform_one_batch(self, *args, **kwargs) -> list:
             pass
@@ -662,7 +684,8 @@ def init_train(args, DataLoader):
     dev_file.set_all(args.dev_file, args.src_idx, args.trg_idx, args.trg_id_idx, args.trg_type_idx)
     dev_file.set_mid(args.dev_mid_file, args.mid_str_idx, args.mid_id_idx, args.mid_type_idx)
     data_loader = DataLoader(True, args.map_file, args.batch_size, args.mega_size, args.use_panphon, args.use_mid, args.share_vocab, train_file=train_file,
-                             dev_file=dev_file, test_file=None, trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num)
+                             dev_file=dev_file, test_file=None, trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num,
+                             trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding, alia_file=args.alia_file)
     similarity_measure = Similarity(args.similarity_measure)
 
     if args.objective == "hinge":

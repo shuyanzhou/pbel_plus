@@ -14,11 +14,12 @@ from base_test import init_test, eval_dataset
 from config import argps
 from similarity_calculator import Similarity
 from utils.constant import DEVICE, RANDOM_SEED
-
+import numpy as np
 
 random_seed = RANDOM_SEED
 torch.manual_seed(random_seed)
 random.seed(random_seed)
+np.random.seed(random_seed)
 print = functools.partial(print, flush=True)
 device = DEVICE
 
@@ -94,14 +95,17 @@ class Batch(BaseBatch):
 
 class DataLoader(BaseDataLoader):
     def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                 train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num):
-        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                                        "<pad>", train_file, dev_file, test_file, trg_encoding_num, mid_encoding_num)
+                 train_file, dev_file, test_file,
+                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file):
+        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, "<UNK>",
+                                        train_file, dev_file, test_file,
+                                        trg_encoding_num, mid_encoding_num,
+                                        trg_auto_encoding, mid_auto_encoding, alia_file)
 
     def new_batch(self):
         return Batch()
 
-    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx, auto_encoding):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
@@ -111,11 +115,20 @@ class DataLoader(BaseDataLoader):
                     string = [x2i_map[ngram] for ngram in get_ngram(tks[str_idx])]
                     string = [string]
                 else:
-                    all_string = []
-                    for i in range(encoding_num):
-                        string = [x2i_map[ngram] for ngram in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + get_ngram(tks[str_idx])]
-                        all_string.append(string)
-                    string = all_string
+                    if auto_encoding:
+                        all_string = []
+                        for i in range(encoding_num):
+                            string = [x2i_map[ngram] for ngram in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + get_ngram(tks[str_idx])]
+                            all_string.append(string)
+                        string = all_string
+                    else:
+                        all_string = []
+                        alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
+                        for i in range(encoding_num):
+                            string = [x2i_map[ngram] for ngram in get_ngram(alias[i])]
+                            all_string.append(string)
+                        string = all_string
+
                 yield (string, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
 
