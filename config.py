@@ -49,7 +49,7 @@ def argps():
     parser.add_argument("--trg_idx", help="KB entity string index", type=int, default=1)
     parser.add_argument("--trg_id_idx", help="KB id index", type=int, default=0)
     parser.add_argument("--use_panphon", type=str2bool, default=False)
-    parser.add_argument("--val_topk", type=int, default=1)
+    parser.add_argument("--val_topk", type=int, default=30)
 
     # training details
     parser.add_argument("--similarity_measure", choices=("cosine", "bl", "lcosine"), required=True)

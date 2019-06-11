@@ -2,10 +2,9 @@ import os
 import numpy as np
 from collections import defaultdict
 import epitran
-
+import sys
 
 n=20
-PIVOT = ""
 
 def merge(suffix, base_path, file_name):
     mention_entity_map = defaultdict(lambda:defaultdict(float))
@@ -54,20 +53,26 @@ def get_type_map():
 
 
 
-def get_analysis_file(lang, model):
+def get_analysis_file(lang, model, gold_file, result_file, new_result_file):
     epitran_map = {"hi": "hin-Deva",
                    "am": "amh-Ethi",
                    "th": "tha-Thai",
                    "tr": "tur-Latn",
                    "ta": "tam-Taml",
                    "id": "ind-Latn",
-                   "mr": "mar-Deva"}
+                   "mr": "mar-Deva",
+                   "en": "eng-Latn",
+                   "ti": "tir-Ethi",
+                   "te": "tel-Telu",
+                   "lo": "lao-Laoo",
+                   "om": "orm-Latn",
+                   "kw": "kin-Latn",
+                   "si": "sin-Sinh",
+                   "il10":"sin-Sinh",
+                   "il5":"tir-Ethi"}
+
     epi = epitran.Epitran(epitran_map[lang])
     entity_type_map, id_name_map = get_type_map()
-    base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
-    gold_file = os.path.join(base_path, "data", "unique_mend_ee_test_en-{}_links".format(lang))
-    result_file = os.path.join(base_path, "results", "unique_mend_ee_{}en-{}_{}.id".format(PIVOT, lang, model))
-    new_result_file = os.path.join(base_path, "results", "analysis", "unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model))
 
     tot = 0
     recall_dict = {'1': 0, '2': 0, '5': 0, '10': 0, '20': 0, '30': 0}
@@ -77,7 +82,7 @@ def get_analysis_file(lang, model):
                 for gold_line, result_line in zip(fg, fr):
                     tot += 1
                     gold_en_string, mention = gold_line.strip().split(" ||| ")[1:3]
-                    gold_type = entity_type_map[gold_en_string]
+                    gold_type = entity_type_map.get(gold_en_string, "NAN")
                     _, entity_info = result_line.split(" ||| ")
                     mention_ipa = epi.transliterate(mention)
                     entity_info = [x.split(" | ") for x in entity_info.split(" || ")]
@@ -98,9 +103,34 @@ def get_analysis_file(lang, model):
 
 if __name__ == "__main__":
     base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/split"
-    lang = "mr"
-    model = "en-hi_ee_mend_cosine-hinge-multi_grapheme"
-    file_name = "unique_mend_ee_{}en-{}_{}".format(PIVOT, lang, model)
-    merge("id", base_path, file_name)
-    merge("str", base_path, file_name)
-    get_analysis_file(lang, model)
+
+
+    PIVOT = sys.argv[1]
+    lang = sys.argv[2]
+    model = sys.argv[3]
+    test_data = sys.argv[4]
+    # PIVOT = "pivot_"
+    # lang = "mr"
+    # model = "en-hi_ee_cosine-hinge_grapheme_aka"
+    # test_data = "ee_mend"
+    # test_data = "ee"
+
+    if test_data == "me":
+        spl_result_file = "me_test{}en-{}_{}".format(PIVOT, lang, model)
+        data_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
+        gold_file = os.path.join(data_path, "data", "me_en-{}_links".format(lang))
+        result_file = os.path.join(data_path, "results", "me{}en-{}_{}.id".format(PIVOT, lang, model))
+        new_result_file = os.path.join(data_path, "results", "analysis", "me{}en-{}_{}.anl".format(PIVOT, lang, model))
+
+    elif test_data == "ee":
+        spl_result_file = "ee_test{}en-{}_{}".format(PIVOT, lang, model)
+        data_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
+        gold_file = os.path.join(data_path, "data", "ee_test_en-{}_links".format(lang))
+        result_file = os.path.join(data_path, "results", "ee_test{}en-{}_{}.id".format(PIVOT, lang, model))
+        new_result_file = os.path.join(data_path, "results", "analysis", "ee_test{}en-{}_{}.anl".format(PIVOT, lang, model))
+    else:
+        sys.exit(0)
+
+    merge("id", base_path, spl_result_file)
+    merge("str", base_path, spl_result_file)
+    get_analysis_file(lang, model, gold_file, result_file, new_result_file)

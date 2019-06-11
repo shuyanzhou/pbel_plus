@@ -21,7 +21,7 @@ def get_type_map():
 
 
 # get analysis file
-def get_analysis_file(lang, model):
+def get_analysis_file(lang, gold_file, result_file, new_result_file):
     epitran_map = {"hi": "hin-Deva",
                    "am": "amh-Ethi",
                    "th": "tha-Thai",
@@ -36,10 +36,6 @@ def get_analysis_file(lang, model):
 
     epi = epitran.Epitran(epitran_map[lang])
     entity_type_map, id_name_map = get_type_map()
-    base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
-    gold_file = os.path.join(base_path, "data", "unique_mend_ee_test_en-{}_links".format(lang))
-    result_file = os.path.join(base_path, "results", "unique_mend_ee_{}en-{}_{}.id".format(PIVOT, lang, model))
-    new_result_file = os.path.join(base_path, "results", "analysis", "unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model))
 
     tot = 0
     recall_dict = {'1': 0, '2': 0, '5': 0, '10': 0, '20': 0, '30': 0}
@@ -132,18 +128,41 @@ def bucket_result(fname, criterion):
         for k, tot in tot_counter.items():
             print(k, float(acc_counter[k]), tot, float(acc_counter[k]) / tot)
 
+def get_file_name(model, data, lang):
+    base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
+    if data == "ee_mend":
+        gold_file = os.path.join(base_path, "data", "me_en-{}_links".format(lang))
+        result_file = os.path.join(base_path, "results", "me{}en-{}_{}.id".format(PIVOT, lang, model))
+        new_result_file = os.path.join(base_path, "results", "analysis",
+                                       "me{}en-{}_{}.anl".format(PIVOT, lang, model))
+    elif data == "ee":
+        gold_file = os.path.join(base_path, "data", "me_en-{}_links".format(lang))
+        result_file = os.path.join(base_path, "results", "me{}en-{}_{}.id".format(PIVOT, lang, model))
+        new_result_file = os.path.join(base_path, "results", "analysis",
+                                       "me{}en-{}_{}.anl".format(PIVOT, lang, model))
+    else:
+        raise NotImplementedError
+
+    return gold_file, result_file, new_result_file
 
 if __name__ == "__main__":
     lang = sys.argv[1]
-    model = sys.argv[2]
-    if len(sys.argv) >= 4:
-        model2 = sys.argv[3]
-    # get_analysis_file(lang, model)
-    # get_analysis_file(lang, model2)
-    get_diff("unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model),
-             "unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model2),
-             "unique_mend_ee_{}en-{}_{}-{}.diff".format(PIVOT, lang, model, model2))
+    data = sys.argv[2]
+    model = sys.argv[3]
+    model2 = sys.argv[4] if len(sys.argv) >= 5 else None
+
+    gold_file, result_file, new_result_file = get_file_name(model, data, lang)
+    get_analysis_file(lang, gold_file, result_file, new_result_file)
+
+    if model2 is not None:
+        gold_file, result_file, new_result_file = get_file_name(model2, data, lang)
+        get_analysis_file(lang, gold_file, result_file, new_result_file)
+
+    # get_diff("unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model),
+    #          "unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model2),
+    #          "unique_mend_ee_{}en-{}_{}-{}.diff".format(PIVOT, lang, model, model2))
     # base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
+
     # result_file = os.path.join(base_path, "results", "analysis", "unique_mend_ee_en-{}_{}.anl".format(lang, model))
     # bucket_result(result_file, "length")
     # bucket_result(result_file, "type")

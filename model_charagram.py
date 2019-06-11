@@ -112,6 +112,8 @@ class DataLoader(BaseDataLoader):
                 line_tot += 1
                 tks = line.strip().split(" ||| ")
                 if encoding_num == 1:
+                    if x2i_map is None or tks is None:
+                        print(x2i_map is None, tks is None)
                     string = [x2i_map[ngram] for ngram in get_ngram(tks[str_idx])]
                     string = [string]
                 else:
