@@ -11,9 +11,10 @@ import numpy as np
 import pickle
 from similarity_calculator import Similarity
 import argparse
+import copy
 from typing import List, Generator
 from criterion import NSHingeLoss, MultiMarginLoss, CrossEntropyLoss
-from collections import defaultdict
+from collections import defaultdict, Counter
 from itertools import combinations
 from utils.constant import RANDOM_SEED, PATIENT, EPOCH_CHECK, DEVICE, UPDATE_PATIENT
 
@@ -152,7 +153,7 @@ class Encoder(nn.Module):
 class BaseDataLoader:
         def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, pad_str,
                      train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo,
-                     trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file):
+                     trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold):
             self.batch_size = batch_size
             self.train_file = train_file
             self.dev_file = dev_file
@@ -171,10 +172,33 @@ class BaseDataLoader:
             self.load_alia_map(alia_file)
             self.trg_auto_encoding = trg_auto_encoding
             self.mid_auto_encoding = mid_auto_encoding
+            self.n_gram_threshold = n_gram_threshold
             if is_train:
                 self.init_train()
             else:
                 self.init_test()
+
+        def n_gram_filter(self, data, freq_map, is_test=False):
+            filter_data = []
+            for cur_data in data:
+                all_string_idx = cur_data[0]
+                filter_all_string_idx = []
+                for string_idx in all_string_idx:
+                    filter_idx = []
+                    for idx in string_idx:
+                        if idx == self.pad_idx or freq_map[idx] < self.n_gram_threshold:
+                            continue
+                        else:
+                            filter_idx.append(idx)
+                    if len(filter_idx) == 0:
+                        # pad with placeholder
+                        filter_idx = [self.pad_idx]
+                    filter_all_string_idx.append(filter_idx)
+
+                filter_data.append([filter_all_string_idx, cur_data[1]])
+
+
+            return filter_data
 
         def init_train(self):
             self.x2i_src = defaultdict(lambda: len(self.x2i_src))
@@ -182,6 +206,8 @@ class BaseDataLoader:
             # make sure pad is 0
             self.x2i_src[self.pad_str]
             self.x2i_trg[self.pad_str]
+            self.src_freq_map = Counter()
+            self.trg_freq_map = Counter()
             self.train_src = list(self.load_data(self.train_file.src_file_name, self.train_file.src_str_idx,
                                                  self.train_file.src_id_idx, is_src=True, encoding_num=1, type_idx=None, auto_encoding=False))
             self.train_trg = list(self.load_data(self.train_file.trg_file_name, self.train_file.trg_str_idx,
@@ -190,19 +216,25 @@ class BaseDataLoader:
             # save map
             self.save_map(self.x2i_src, self.map_file + "_src.pkl")
             self.save_map(self.x2i_trg, self.map_file + "_trg.pkl")
+            self.save_map(self.src_freq_map, self.map_file + "_src_freq.pkl")
+            self.save_map(self.trg_freq_map, self.map_file + "_trg_freq.pkl")
 
             if self.use_mid:
                 if self.share_vocab:
                     self.x2i_mid = self.x2i_src
+                    self.mid_freq_map = self.src_freq_map
                 else:
                     self.x2i_mid = defaultdict(lambda: len(self.x2i_mid))
                     self.x2i_mid[self.pad_str]
+                    self.mid_freq_map = Counter()
                 self.train_mid = list(self.load_data(self.train_file.mid_file_name, self.train_file.mid_str_idx, self.train_file.mid_id_idx,
                                                      is_src=False, is_mid=True, encoding_num=self.mid_encoding_num, type_idx=self.train_file.mid_type_idx,
                                                      auto_encoding=self.mid_auto_encoding))
                 self.save_map(self.x2i_mid, self.map_file + "_mid.pkl")
+                self.save_map(self.mid_freq_map, self.map_file + "_mid_freq.pkl")
                 self.mid_vocab_size = len(self.x2i_mid)
                 self.x2i_mid = defaultdict(lambda: self.x2i_mid[self.pad_str], self.x2i_mid)
+                self.mid_freq_map = defaultdict(lambda: float('-inf'), self.mid_freq_map)
             else:
                 self.train_mid = None
                 self.mid_vocab_size = 0
@@ -214,6 +246,8 @@ class BaseDataLoader:
             self.trg_vocab_size = len(self.x2i_trg)
             self.x2i_src = defaultdict(lambda: self.x2i_src[self.pad_str], self.x2i_src)
             self.x2i_trg = defaultdict(lambda: self.x2i_trg[self.pad_str], self.x2i_trg)
+            self.src_freq_map = defaultdict(lambda: float('-inf'), self.src_freq_map)
+            self.trg_freq_map = defaultdict(lambda: float('-inf'), self.trg_freq_map)
 
             if self.dev_file:
                 self.dev_src = list(self.load_data(self.dev_file.src_file_name, self.dev_file.src_str_idx,
@@ -235,6 +269,20 @@ class BaseDataLoader:
             else:
                 self.dev_src, self.dev_trg, self.dev_mid = None, None, None
 
+            if self.n_gram_threshold != 0:
+                self.train_src = self.n_gram_filter(self.train_src, self.src_freq_map)
+                self.train_trg = self.n_gram_filter(self.train_trg, self.trg_freq_map)
+                if self.use_mid:
+                    self.train_mid = self.n_gram_filter(self.train_mid, self.mid_freq_map)
+
+                # recover from training frequency
+                if self.dev_file :
+                    self.dev_src = self.n_gram_filter(self.dev_src, self.src_freq_map)
+                    self.dev_trg = self.n_gram_filter(self.dev_trg, self.trg_freq_map)
+                    if self.use_mid:
+                        self.dev_mid = self.n_gram_filter(self.dev_mid, self.mid_freq_map)
+
+
         def get_non_negative_mask(self):
             id_idx_map = defaultdict(list)
             for idx, (_, kb_id) in enumerate(self.train_src):
@@ -253,8 +301,11 @@ class BaseDataLoader:
         def init_test(self):
             self.x2i_src = self.load_map(self.map_file + "_src.pkl")
             self.x2i_trg = self.load_map(self.map_file + "_trg.pkl")
+            self.src_freq_map = self.load_map(self.map_file + "_src_freq.pkl", float('-inf'))
+            self.trg_freq_map = self.load_map(self.map_file + "_trg_freq.pkl", float('-inf'))
             if self.use_mid:
                 self.x2i_mid = self.load_map(self.map_file + "_mid.pkl")
+                self.mid_freq_map = self.load_map(self.map_file + "_mid_freq.pkl", float('-inf'))
             else:
                 self.x2i_mid = None
             self.i2c_src = {v: k for k, v in self.x2i_src.items()}
@@ -275,6 +326,11 @@ class BaseDataLoader:
                                                     encoding_num=self.mid_encoding_num, type_idx=self.test_file.mid_type_idx,
                                                     auto_encoding=self.mid_auto_encoding))
 
+            if self.n_gram_threshold != 0:
+                self.test_src = self.n_gram_filter(self.test_src, self.src_freq_map, True)
+                self.test_trg = self.n_gram_filter(self.test_trg, self.trg_freq_map, True)
+                if self.use_mid:
+                    self.test_mid = self.n_gram_filter(self.test_mid, self.mid_freq_map, True)
 
         def load_alia_map(self, fname):
             self.title_alia_map = defaultdict(list)
@@ -309,17 +365,20 @@ class BaseDataLoader:
 
             return alias
 
-        def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx, auto_encoding):
+        def load_all_data(self, file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx, auto_encoding):
             pass
 
         def load_data(self, file_name, str_idx, id_idx, is_src, encoding_num, type_idx, auto_encoding, is_mid=False):
             if is_src:
                 x2i_map = self.x2i_src
+                freq_map = self.src_freq_map
             else:
                 x2i_map = self.x2i_trg
+                freq_map = self.trg_freq_map
             if is_mid:
                 x2i_map = self.x2i_mid
-            return self.load_all_data(file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx, auto_encoding)
+                freq_map = self.mid_freq_map
+            return self.load_all_data(file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx, auto_encoding)
 
         def transform_one_batch(self, *args, **kwargs) -> list:
             pass
@@ -441,10 +500,12 @@ class BaseDataLoader:
                 pickle.dump(dict(map), f)
                 print("[INFO] save x to idx map to :{}, len: {:d}".format(map_file, len(map)))
 
-        def load_map(self, map_file):
+        def load_map(self, map_file, default_return=None):
             with open(map_file, "rb") as f:
                 m = pickle.load(f)
-                m = defaultdict(lambda: m[self.pad_str], m)
+                if default_return is None:
+                    default_return = m[self.pad_str]
+                m = defaultdict(lambda: default_return, m)
                 print("[INFO] load x to idx map from {}, len: {:d}".format(map_file, len(m)))
                 return m
 
@@ -685,7 +746,7 @@ def init_train(args, DataLoader):
     dev_file.set_mid(args.dev_mid_file, args.mid_str_idx, args.mid_id_idx, args.mid_type_idx)
     data_loader = DataLoader(True, args.map_file, args.batch_size, args.mega_size, args.use_panphon, args.use_mid, args.share_vocab, train_file=train_file,
                              dev_file=dev_file, test_file=None, trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num,
-                             trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding, alia_file=args.alia_file)
+                             trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding, alia_file=args.alia_file, n_gram_threshold=args.n_gram_threshold)
     similarity_measure = Similarity(args.similarity_measure)
 
     if args.objective == "hinge":

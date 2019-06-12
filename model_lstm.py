@@ -91,16 +91,16 @@ class Batch(BaseBatch):
 class DataLoader(BaseDataLoader):
     def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
                  train_file, dev_file, test_file,
-                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file):
+                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold):
         super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, "<UNK>",
                                         train_file, dev_file, test_file,
                                         trg_encoding_num, mid_encoding_num,
-                                        trg_auto_encoding, mid_auto_encoding, alia_file)
+                                        trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold)
 
     def new_batch(self):
         return Batch()
 
-    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, encoding_num, type_idx, auto_encoding):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx, auto_encoding):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
@@ -126,6 +126,9 @@ class DataLoader(BaseDataLoader):
                             string = [x2i_map[char] for char in alias[i]]
                             all_string.append(string)
                         string = all_string
+                for s in string:
+                    for ss in s:
+                        freq_map[ss] += 1
 
                 yield (string, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))

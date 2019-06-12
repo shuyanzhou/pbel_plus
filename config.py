@@ -30,6 +30,9 @@ def argps():
     parser.add_argument("--mega_size", type=int, default=40)
     parser.add_argument("--method", default="base")
 
+    # filter
+    parser.add_argument("--n_gram_threshold", help="ignore n gram with less than the min frequency", type=int, default=0)
+
     # middle stuff
     parser.add_argument("--share_vocab", help="whether to share src and middle vocab and encoding model",
                         type=str2bool, default=False)
