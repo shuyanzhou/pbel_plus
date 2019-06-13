@@ -1,4 +1,5 @@
 import sys
+import os
 sys.path.append("/home/shuyanzh/workshop/cmu_lorelei_edl/")
 from collections import defaultdict
 import functools
@@ -301,8 +302,10 @@ class BaseDataLoader:
         def init_test(self):
             self.x2i_src = self.load_map(self.map_file + "_src.pkl")
             self.x2i_trg = self.load_map(self.map_file + "_trg.pkl")
-            self.src_freq_map = self.load_map(self.map_file + "_src_freq.pkl", float('-inf'))
-            self.trg_freq_map = self.load_map(self.map_file + "_trg_freq.pkl", float('-inf'))
+            self.src_freq_map = self.load_map(self.map_file + "_src_freq.pkl", float('-inf')) if os.path.exists(self.map_file + "_src_freq.pkl") \
+                else defaultdict(int)
+            self.trg_freq_map = self.load_map(self.map_file + "_trg_freq.pkl", float('-inf')) if os.path.exists(self.map_file + "_trg_freq.pkl") \
+                else defaultdict(int)
             if self.use_mid:
                 self.x2i_mid = self.load_map(self.map_file + "_mid.pkl")
                 self.mid_freq_map = self.load_map(self.map_file + "_mid_freq.pkl", float('-inf'))

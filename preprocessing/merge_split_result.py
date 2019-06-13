@@ -69,7 +69,9 @@ def get_analysis_file(lang, model, gold_file, result_file, new_result_file):
                    "kw": "kin-Latn",
                    "si": "sin-Sinh",
                    "il10":"sin-Sinh",
-                   "il5":"tir-Ethi"}
+                   "il5":"tir-Ethi",
+                   "il6":"som-Latn",
+                   "il9":"run-Latn"}
 
     epi = epitran.Epitran(epitran_map[lang])
     entity_type_map, id_name_map = get_type_map()
@@ -116,18 +118,18 @@ if __name__ == "__main__":
     # test_data = "ee"
 
     if test_data == "me":
-        spl_result_file = "me_test{}en-{}_{}".format(PIVOT, lang, model)
+        spl_result_file = "me{}en-{}_{}".format(PIVOT, lang, model)
         data_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
-        gold_file = os.path.join(data_path, "data", "me_en-{}_links".format(lang))
+        gold_file = os.path.join(data_path, "data", "me_test_en-{}_links".format(lang))
         result_file = os.path.join(data_path, "results", "me{}en-{}_{}.id".format(PIVOT, lang, model))
         new_result_file = os.path.join(data_path, "results", "analysis", "me{}en-{}_{}.anl".format(PIVOT, lang, model))
 
     elif test_data == "ee":
-        spl_result_file = "ee_test{}en-{}_{}".format(PIVOT, lang, model)
+        spl_result_file = "ee{}en-{}_{}".format(PIVOT, lang, model)
         data_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
         gold_file = os.path.join(data_path, "data", "ee_test_en-{}_links".format(lang))
-        result_file = os.path.join(data_path, "results", "ee_test{}en-{}_{}.id".format(PIVOT, lang, model))
-        new_result_file = os.path.join(data_path, "results", "analysis", "ee_test{}en-{}_{}.anl".format(PIVOT, lang, model))
+        result_file = os.path.join(data_path, "results", "ee{}en-{}_{}.id".format(PIVOT, lang, model))
+        new_result_file = os.path.join(data_path, "results", "analysis", "ee{}en-{}_{}.anl".format(PIVOT, lang, model))
     else:
         sys.exit(0)
 

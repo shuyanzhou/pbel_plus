@@ -4,8 +4,6 @@ import epitran
 from collections import defaultdict, Counter
 import numpy as np
 
-
-PIVOT = ""
 # get KB type map
 def get_type_map():
     kb_file = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/kb_split/en_kb"
@@ -32,7 +30,14 @@ def get_analysis_file(lang, gold_file, result_file, new_result_file):
                    "en": "eng-Latn",
                    "ti": "tir-Ethi",
                    "te": "tel-Telu",
-                   "lo": "lao-Laoo"}
+                   "lo": "lao-Laoo",
+                   "om": "orm-Latn",
+                   "kw": "kin-Latn",
+                   "si": "sin-Sinh",
+                   "il10":"sin-Sinh",
+                   "il5":"tir-Ethi",
+                   "il6":"som-Latn",
+                   "il9":"run-Latn"}
 
     epi = epitran.Epitran(epitran_map[lang])
     entity_type_map, id_name_map = get_type_map()
@@ -128,18 +133,18 @@ def bucket_result(fname, criterion):
         for k, tot in tot_counter.items():
             print(k, float(acc_counter[k]), tot, float(acc_counter[k]) / tot)
 
-def get_file_name(model, data, lang):
+def get_file_name(model, data, lang, pivot):
     base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/"
-    if data == "ee_mend":
-        gold_file = os.path.join(base_path, "data", "me_en-{}_links".format(lang))
-        result_file = os.path.join(base_path, "results", "me{}en-{}_{}.id".format(PIVOT, lang, model))
+    if data == "me":
+        gold_file = os.path.join(base_path, "data", "me_test_en-{}_links".format(lang))
+        result_file = os.path.join(base_path, "results", "me{}en-{}_{}.id".format(pivot, lang, model))
         new_result_file = os.path.join(base_path, "results", "analysis",
-                                       "me{}en-{}_{}.anl".format(PIVOT, lang, model))
+                                       "me{}en-{}_{}.anl".format(pivot, lang, model))
     elif data == "ee":
-        gold_file = os.path.join(base_path, "data", "me_en-{}_links".format(lang))
-        result_file = os.path.join(base_path, "results", "me{}en-{}_{}.id".format(PIVOT, lang, model))
+        gold_file = os.path.join(base_path, "data", "ee_test_en-{}_links".format(lang))
+        result_file = os.path.join(base_path, "results", "ee{}en-{}_{}.id".format(pivot, lang, model))
         new_result_file = os.path.join(base_path, "results", "analysis",
-                                       "me{}en-{}_{}.anl".format(PIVOT, lang, model))
+                                       "ee{}en-{}_{}.anl".format(pivot, lang, model))
     else:
         raise NotImplementedError
 
@@ -147,15 +152,16 @@ def get_file_name(model, data, lang):
 
 if __name__ == "__main__":
     lang = sys.argv[1]
-    data = sys.argv[2]
-    model = sys.argv[3]
-    model2 = sys.argv[4] if len(sys.argv) >= 5 else None
+    test_data = sys.argv[2]
+    pivot = sys.argv[3]
+    model = sys.argv[4]
+    model2 = sys.argv[5] if len(sys.argv) >= 6 else None
 
-    gold_file, result_file, new_result_file = get_file_name(model, data, lang)
+    gold_file, result_file, new_result_file = get_file_name(model, test_data, lang, pivot)
     get_analysis_file(lang, gold_file, result_file, new_result_file)
 
     if model2 is not None:
-        gold_file, result_file, new_result_file = get_file_name(model2, data, lang)
+        gold_file, result_file, new_result_file = get_file_name(model2, test_data, lang, pivot)
         get_analysis_file(lang, gold_file, result_file, new_result_file)
 
     # get_diff("unique_mend_ee_{}en-{}_{}.anl".format(PIVOT, lang, model),

@@ -32,10 +32,10 @@ def change_name(path, old_name, new_name):
         #     change_name(path, fname, new_name)
 
 all_path = ["/projects/tir2/users/shuyanzh/lorelei_data/pbel/results",
-            "/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/split",
             "/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/analysis",
+            "/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/split",
             "/projects/tir2/users/shuyanzh/lorelei_data/pbel/models",
-            "/projects/tir2/users/shuyanzh/lorelei_data/pbel/c2i_maps"][-2:]
+            "/projects/tir2/users/shuyanzh/lorelei_data/pbel/c2i_maps"][1:2]
 
 for path in all_path:
     for fname in os.listdir(path):
@@ -54,7 +54,7 @@ for path in all_path:
         if "char" in fname:
             new_name = fname.replace("lstm-", "")
         else:
-            new_name = fname.replace("lstm-lstm-lstm-lstm", "lstm")
+            new_name = fname.replace("lstm-lstm", "lstm")
         if "aka" in new_name:
             new_name = new_name.replace("graph_aka", "aka_graph")
             new_name = new_name.replace("ipa_aka", "aka_ipa")

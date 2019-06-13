@@ -13,8 +13,8 @@ all_lang = [
                 ["mr", "ti", "jv", "il6", "il9"]
             ],
             [
-                ["th", "ta", "am", "am", "hi"],
-                ["lo", "te", "ti", "il5", "il10"]
+                ["th", "am", "am", "hi", "hi"],
+                ["lo", "ti", "il5", "il10", "te"]
             ]
         ]
 
@@ -40,5 +40,7 @@ for i in range(2):
         with open(f"test_{tl}_{fn}.sh", "w+", encoding="utf-8") as fout:
             cur_t = t.replace("tlang", tl)
             cur_t = cur_t.replace("lang", pl)
+            if "il" in tl:
+                cur_t = cur_t.replace('declare -a all_test_data=("ee" "me")', 'declare -a all_test_data=("me")')
             fout.write(cur_t)
 
