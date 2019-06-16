@@ -33,6 +33,11 @@ def argps():
     # filter
     parser.add_argument("--n_gram_threshold", help="ignore n gram with less than the min frequency", type=int, default=0)
 
+    # position embedding
+    parser.add_argument("--position_embedding", help="whether to use position embedding", type=str2bool, default=0)
+    parser.add_argument("--st_weight", type=float, default=0.1)
+    parser.add_argument("--ed_weight", type=float, default=0.1)
+
     # middle stuff
     parser.add_argument("--share_vocab", help="whether to share src and middle vocab and encoding model",
                         type=str2bool, default=False)

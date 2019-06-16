@@ -28,12 +28,20 @@ END_SYMBOL = "</s>"
 
 def get_ngram(string, ngram_list=(2, 3, 4, 5)):
     all_ngrams = []
+    all_st_idx = []
+    all_ed_idx = []
     char_list = [START_SYMBOL] + list(string) + [END_SYMBOL]
     for n in ngram_list:
         cur_ngram = zip(*[char_list[i:] for i in range(n)])
         cur_ngram = ["".join(x) for x in cur_ngram]
         all_ngrams += cur_ngram
-    return all_ngrams
+
+        idx_list = [i for i in range(len(char_list))]
+        cur_idx_ngram = zip(*[idx_list[i:] for i in range(n)])
+        st_ed = [[x[0], x[-1]] for x in cur_idx_ngram]
+        all_st_idx += [x[0] for x in st_ed]
+        all_ed_idx += [x[1] for x in st_ed]
+    return all_ngrams, all_st_idx, all_ed_idx
 
 
 class Batch(BaseBatch):
@@ -96,11 +104,12 @@ class Batch(BaseBatch):
 class DataLoader(BaseDataLoader):
     def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
                  train_file, dev_file, test_file,
-                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold):
+                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold,
+                 position_embedding):
         super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, "<UNK>",
                                         train_file, dev_file, test_file,
                                         trg_encoding_num, mid_encoding_num,
-                                        trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold)
+                                        trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold, position_embedding)
 
     def new_batch(self):
         return Batch()
@@ -112,27 +121,44 @@ class DataLoader(BaseDataLoader):
                 line_tot += 1
                 tks = line.strip().split(" ||| ")
                 if encoding_num == 1:
-                    string = [x2i_map[ngram] for ngram in get_ngram(tks[str_idx])]
-                    string = [string]
+                    all_n_gram, st, ed = get_ngram(tks[str_idx])
+                    string = [x2i_map[ngram] for ngram in all_n_gram]
+                    all_string = [string]
+                    all_st = [st]
+                    all_ed = [ed]
                 else:
                     if auto_encoding:
                         all_string = []
+                        all_st = []
+                        all_ed = []
                         for i in range(encoding_num):
-                            string = [x2i_map[ngram] for ngram in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + get_ngram(tks[str_idx])]
+                            all_n_gram, st, ed = get_ngram(tks[str_idx])
+                            string = [x2i_map[ngram] for ngram in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + all_n_gram]
                             all_string.append(string)
-                        string = all_string
+                            all_st.append(st)
+                            all_ed.append(ed)
                     else:
                         all_string = []
+                        all_st = []
+                        all_ed = []
                         alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
                         for i in range(encoding_num):
-                            string = [x2i_map[ngram] for ngram in get_ngram(alias[i])]
+                            all_n_gram, st, ed = get_ngram(alias[i])
+                            string = [x2i_map[ngram] for ngram in all_n_gram]
                             all_string.append(string)
-                        string = all_string
-                for s in string:
+                            all_st.append(st)
+                            all_ed.append(ed)
+                for s in all_string:
                     for ss in s:
                         freq_map[ss] += 1
 
-                yield (string, tks[id_idx])
+                self.max_position = max(self.max_position, max([len(x) for x in all_string]))
+
+                if self.position_embedding:
+                    all_info = [all_string, all_st, all_ed]
+                else:
+                    all_info = [all_string]
+                yield (all_info, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
 
 
@@ -147,7 +173,8 @@ class DataLoader(BaseDataLoader):
         return [data_tensor, mask]
     
 class Charagram(Encoder):
-    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure, use_mid, share_vocab, mid_vocab_size=0):
+    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure, use_mid,
+                 share_vocab, position_embedding, max_position, st_weight, ed_weight, mid_vocab_size=0):
         super(Charagram, self).__init__(embed_size)
         self.name = "charagram"
         self.src_vocab_size = src_vocab_size
@@ -157,28 +184,50 @@ class Charagram(Encoder):
         self.share_vocab = share_vocab
         self.hidden_size = embed_size
         self.embed_size = embed_size
+        self.position_embedding = position_embedding
+        self.max_position = max_position
+        self.st_weight, self.ed_weight = st_weight, ed_weight
         self.activate = torch.tanh
-
         # parameters
         self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
         torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
         self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
         torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
+
+
+        if position_embedding:
+            self.src_st_lookup = nn.Embedding(max_position, embed_size)
+            self.src_ed_lookup = nn.Embedding(max_position, embed_size)
+            self.trg_st_lookup = nn.Embedding(max_position, embed_size)
+            self.trg_ed_lookup = nn.Embedding(max_position, embed_size)
+            torch.nn.init.xavier_uniform_(self.src_st_lookup.weight, gain=1)
+            torch.nn.init.xavier_uniform_(self.src_ed_lookup.weight, gain=1)
+            torch.nn.init.xavier_uniform_(self.trg_st_lookup.weight, gain=1)
+            torch.nn.init.xavier_uniform_(self.trg_ed_lookup.weight, gain=1)
+
         self.bias_src = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
-        torch.nn.init.constant_(self.bias_src, 0.0)
         self.bias_trg = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
+        torch.nn.init.constant_(self.bias_src, 0.0)
         torch.nn.init.constant_(self.bias_trg, 0.0)
 
         if use_mid:
             if share_vocab:
                 self.mid_lookup = self.src_lookup
                 self.bias_mid = self.bias_src
+                if self.position_embedding:
+                    self.mid_st_lookup = self.src_st_lookup
+                    self.mid_ed_lookup = self.src_ed_lookup
             else:
                 self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
                 torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
+                if self.position_embedding:
+                    self.mid_st_lookup = nn.Embedding(max_position, embed_size)
+                    self.mid_ed_lookup = nn.Embedding(max_position, embed_size)
+                    torch.nn.init.xavier_uniform_(self.mid_st_lookup.weight, gain=1)
+                    torch.nn.init.xavier_uniform_(self.mid_ed_lookup.weight, gain=1)
+
                 self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
                 torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
-
 
         self.similarity_measure = similarity_measure
 
@@ -207,12 +256,23 @@ class Charagram(Encoder):
                     bias = self.bias_trg
                     input, mask = batch.get_trg()
 
-        # [batch_size, max_len, embed_size]
-        embed = lookup(input)
-        # mask padding
-        embed = embed.masked_fill(mask==0, 0)
-        # [batch_size, embed_size]
-        encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
+        # will contain 3 part
+        if self.position_embedding:
+            word_input, st_input, ed_input = torch.unbind(input, dim=-1)
+            word_embed = lookup(word_input)
+            st_embed = self.st_lookup(st_input)
+            ed_embed = self.ed_lookup(ed_input)
+            embed = word_embed + self.st_weight * st_embed + self.ed_weight * ed_embed
+            embed = embed.masked_fill(mask==0, 0)
+            encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
+
+        else:
+            # [batch_size, max_len, embed_size]
+            embed = lookup(input)
+            # mask padding
+            embed = embed.masked_fill(mask==0, 0)
+            # [batch_size, embed_size]
+            encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
         return encoded
 
 def save_model(model:Charagram, epoch, loss, optimizer, model_path):
@@ -223,6 +283,7 @@ def save_model(model:Charagram, epoch, loss, optimizer, model_path):
                 "mid_vocab_size": model.mid_vocab_size,
                 "embed_size": model.embed_size,
                 "similarity_measure": model.similarity_measure.method,
+                "max_position": model.max_position,
                 "epoch": epoch,
                 "loss": loss}, model_path)
     print("[INFO] save model!")
@@ -232,7 +293,12 @@ if __name__ == "__main__":
     if args.is_train:
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
         model = Charagram(data_loader.src_vocab_size, data_loader.trg_vocab_size,
-                    args.embed_size, similarity_measure, args.use_mid, args.share_vocab, data_loader.mid_vocab_size)
+                    args.embed_size, similarity_measure, args.use_mid, args.share_vocab,
+                          position_embedding=args.position_embedding,
+                          max_position=data_loader.max_position,
+                          st_weight=args.st_weight,
+                          ed_weight=args.ed_weight,
+                          mid_vocab_size=data_loader.mid_vocab_size)
         optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model)
 
         if args.finetune:
@@ -251,6 +317,10 @@ if __name__ == "__main__":
                         similarity_measure=similarity_measure,
                         use_mid=args.use_mid,
                         share_vocab=args.share_vocab,
+                        position_embedding=args.position_embedding,
+                        max_position=model_info.get("max_position", 0),
+                        st_weight=args.st_weight,
+                        ed_weight=args.ed_weight,
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
         model.load_state_dict(model_info["model_state_dict"])
         model.set_similarity_matrix()

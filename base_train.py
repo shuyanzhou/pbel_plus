@@ -154,7 +154,8 @@ class Encoder(nn.Module):
 class BaseDataLoader:
         def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, pad_str,
                      train_file:FileInfo, dev_file:FileInfo, test_file:FileInfo,
-                     trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold):
+                     trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold,
+                     position_embedding):
             self.batch_size = batch_size
             self.train_file = train_file
             self.dev_file = dev_file
@@ -174,6 +175,8 @@ class BaseDataLoader:
             self.trg_auto_encoding = trg_auto_encoding
             self.mid_auto_encoding = mid_auto_encoding
             self.n_gram_threshold = n_gram_threshold
+            self.position_embedding = position_embedding
+            self.max_position = 0
             if is_train:
                 self.init_train()
             else:
@@ -182,19 +185,27 @@ class BaseDataLoader:
         def n_gram_filter(self, data, freq_map, is_test=False):
             filter_data = []
             for cur_data in data:
-                all_string_idx = cur_data[0]
+                all_string_idx = cur_data[0][0]
                 filter_all_string_idx = []
-                for string_idx in all_string_idx:
+                for cur_idx, string_idx in enumerate(all_string_idx):
                     filter_idx = []
-                    for idx in string_idx:
-                        if idx == self.pad_idx or freq_map[idx] < self.n_gram_threshold:
+                    for idx, ngram_idx in enumerate(string_idx):
+                        if ngram_idx == self.pad_idx or freq_map[idx] < self.n_gram_threshold:
                             continue
                         else:
                             filter_idx.append(idx)
-                    if len(filter_idx) == 0:
-                        # pad with placeholder
-                        filter_idx = [self.pad_idx]
-                    filter_all_string_idx.append(filter_idx)
+                    if len(filter_idx) != 0:
+                        filter_string = [string_idx[x] for x in filter_idx]
+                        if self.position_embedding:
+                            st_idx = cur_data[0][1][cur_idx]
+                            ed_idx = cur_data[0][2][cur_idx]
+                            filter_st = [st_idx[x] for x in filter_idx]
+                            filter_ed = [ed_idx[x] for x in filter_idx]
+                    else:
+                        filter_string = [self.pad_idx]
+                        filter_st = [0]
+                        filter_ed = [0]
+                    filter_all_string_idx.append([filter_string, filter_st, filter_ed])
 
                 filter_data.append([filter_all_string_idx, cur_data[1]])
 
@@ -389,19 +400,35 @@ class BaseDataLoader:
         def new_batch(self) -> BaseBatch:
             pass
 
+        def extract_idx(self, encoding_num, idx_list):
+            all_idx = []
+            for i in range(encoding_num):
+                all_idx += [idx_list[idx][i] for idx in range(len(idx_list))]
+            assert len(all_idx) == len(idx_list) * encoding_num
+
+            return all_idx
+
         # data from one side
         def prepare_batch(self, side_data, data_idx, encoding_num):
             # this is a list of words
-            words = [side_data[idx][0] for idx in data_idx]
+            words = [side_data[idx][0][0] for idx in data_idx]
             # expand words to list
-            all_words = []
-            for i in range(encoding_num):
-                all_words += [words[idx][i] for idx in range(len(words))]
-            assert len(all_words) == len(words) * encoding_num
+            all_words = self.extract_idx(encoding_num, words)
+            word_idx_tensor, *other_info = self.transform_one_batch(all_words)
 
+            if self.position_embedding:
+                st = [side_data[idx][0][1] for idx in data_idx]
+                all_st = self.extract_idx(encoding_num, st)
+                ed = [side_data[idx][0][2] for idx in data_idx]
+                all_ed = self.extract_idx(encoding_num, ed)
+                st_idx_tensor = self.transform_one_batch(all_st)[0]
+                ed_idx_tensor = self.transform_one_batch(all_ed)[0]
+                merge_tensor = torch.stack((word_idx_tensor, st_idx_tensor, ed_idx_tensor), dim=-1)
+            else:
+                merge_tensor = word_idx_tensor
 
             kb_ids = [side_data[idx][1] for idx in data_idx]
-            batch_info = self.transform_one_batch(all_words)
+            batch_info = [merge_tensor, *other_info]
 
             return batch_info, kb_ids
 
@@ -749,7 +776,9 @@ def init_train(args, DataLoader):
     dev_file.set_mid(args.dev_mid_file, args.mid_str_idx, args.mid_id_idx, args.mid_type_idx)
     data_loader = DataLoader(True, args.map_file, args.batch_size, args.mega_size, args.use_panphon, args.use_mid, args.share_vocab, train_file=train_file,
                              dev_file=dev_file, test_file=None, trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num,
-                             trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding, alia_file=args.alia_file, n_gram_threshold=args.n_gram_threshold)
+                             trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding, alia_file=args.alia_file,
+                             n_gram_threshold=args.n_gram_threshold,
+                             position_embedding=args.position_embedding)
     similarity_measure = Similarity(args.similarity_measure)
 
     if args.objective == "hinge":
