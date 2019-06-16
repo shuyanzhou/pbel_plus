@@ -130,7 +130,7 @@ class DataLoader(BaseDataLoader):
                     for ss in s:
                         freq_map[ss] += 1
 
-                yield ([string], tks[id_idx])
+                yield (string, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
 
     def transform_one_batch(self, batch_data: list) -> list:
