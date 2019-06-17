@@ -152,10 +152,12 @@ class DataLoader(BaseDataLoader):
                     for ss in s:
                         freq_map[ss] += 1
 
-                self.max_position = max(self.max_position, max([len(x) for x in all_string]))
+                self.max_position = max(self.max_position, max([y for x in all_ed for y in x]))
 
                 if self.position_embedding:
                     all_info = [all_string, all_st, all_ed]
+                    for x, y, z in zip(all_string, all_st, all_ed):
+                        assert len(x) == len(y) and len(y) == len(z)
                 else:
                     all_info = [all_string]
                 yield (all_info, tks[id_idx])
@@ -242,13 +244,22 @@ class Charagram(Encoder):
             lookup = self.mid_lookup
             bias = self.bias_mid
             input, mask = batch.get_mid()
+            if self.position_embedding:
+                st_lookup = self.mid_st_lookup
+                ed_lookup = self.mid_ed_lookup
         else:
             if is_src:
                 lookup = self.src_lookup
                 bias = self.bias_src
                 input, mask = batch.get_src()
+                if self.position_embedding:
+                    st_lookup = self.src_st_lookup
+                    ed_lookup = self.src_ed_lookup
             else:
                 lookup = self.trg_lookup
+                if self.position_embedding:
+                    st_lookup = self.trg_st_lookup
+                    ed_lookup = self.trg_ed_lookup
                 if is_mega:
                     bias = self.bias_trg
                     input, mask = batch.get_mega()
@@ -260,8 +271,8 @@ class Charagram(Encoder):
         if self.position_embedding:
             word_input, st_input, ed_input = torch.unbind(input, dim=-1)
             word_embed = lookup(word_input)
-            st_embed = self.st_lookup(st_input)
-            ed_embed = self.ed_lookup(ed_input)
+            st_embed = st_lookup(st_input)
+            ed_embed = ed_lookup(ed_input)
             embed = word_embed + self.st_weight * st_embed + self.ed_weight * ed_embed
             embed = embed.masked_fill(mask==0, 0)
             encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
@@ -295,7 +306,7 @@ if __name__ == "__main__":
         model = Charagram(data_loader.src_vocab_size, data_loader.trg_vocab_size,
                     args.embed_size, similarity_measure, args.use_mid, args.share_vocab,
                           position_embedding=args.position_embedding,
-                          max_position=data_loader.max_position,
+                          max_position=data_loader.max_position + 1,
                           st_weight=args.st_weight,
                           ed_weight=args.ed_weight,
                           mid_vocab_size=data_loader.mid_vocab_size)
