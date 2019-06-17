@@ -186,29 +186,37 @@ class BaseDataLoader:
             filter_data = []
             for cur_data in data:
                 all_string_idx = cur_data[0][0]
-                filter_all_string_idx = []
-                for cur_idx, string_idx in enumerate(all_string_idx):
+                cur_filter_string, cur_filter_st, cur_filter_ed = [], [], []
+                for cur_version, cur_version_string in enumerate(all_string_idx):
                     filter_idx = []
-                    for idx, ngram_idx in enumerate(string_idx):
+                    for idx, ngram_idx in enumerate(cur_version_string):
                         if ngram_idx == self.pad_idx or freq_map[idx] < self.n_gram_threshold:
                             continue
                         else:
                             filter_idx.append(idx)
                     if len(filter_idx) != 0:
-                        filter_string = [string_idx[x] for x in filter_idx]
+                        filter_string = [cur_version_string[x] for x in filter_idx]
                         if self.position_embedding:
-                            st_idx = cur_data[0][1][cur_idx]
-                            ed_idx = cur_data[0][2][cur_idx]
+                            st_idx = cur_data[0][1][cur_version]
+                            ed_idx = cur_data[0][2][cur_version]
                             filter_st = [st_idx[x] for x in filter_idx]
                             filter_ed = [ed_idx[x] for x in filter_idx]
                     else:
                         filter_string = [self.pad_idx]
-                        filter_st = [0]
-                        filter_ed = [0]
-                    filter_all_string_idx.append([filter_string, filter_st, filter_ed])
+                        if self.position_embedding:
+                            filter_st = [0]
+                            filter_ed = [0]
 
-                filter_data.append([filter_all_string_idx, cur_data[1]])
+                    cur_filter_string.append(filter_string)
+                    if self.position_embedding:
+                        cur_filter_ed.append(filter_ed)
+                        cur_filter_st.append(filter_st)
 
+                if self.position_embedding:
+                    all_info = [cur_filter_string, cur_filter_st, cur_filter_ed]
+                else:
+                    all_info = [cur_filter_string]
+                filter_data.append([all_info, cur_data[1]])
 
             return filter_data
 
