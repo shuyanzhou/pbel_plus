@@ -232,7 +232,8 @@ def init_test(args, DataLoader):
                                   args.use_panphon, args.use_mid, args.share_vocab, train_file=None, dev_file=None, test_file=test_file,
                                   trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num,
                                   trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding,
-                                  alia_file=args.alia_file, n_gram_threshold=args.n_gram_threshold)
+                                  alia_file=args.alia_file, n_gram_threshold=args.n_gram_threshold,
+                                  position_embedding=args.position_embedding)
     intermediate_stuff = []
     if args.method != "base":
         for stuff in args.intermediate_stuff:
@@ -252,7 +253,8 @@ def init_test(args, DataLoader):
                                            trg_auto_encoding=args.trg_auto_encoding,
                                            mid_auto_encoding=args.mid_auto_encoding,
                                            alia_file=args.alia_file,
-                                           n_gram_threshold=args.n_gram_threshold
+                                           n_gram_threshold=args.n_gram_threshold,
+                                           position_embedding=args.position_embedding
                                            )
             intermediate_stuff.append((name, inter_data_loader, encoded_file, load_encoded, is_src, is_mid))
 
