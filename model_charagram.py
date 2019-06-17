@@ -6,9 +6,8 @@ import torch
 from torch import nn
 from torch import optim
 import random
+import math
 import panphon as pp
-from  torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import pickle
 from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
 from base_test import init_test, eval_dataset
 from config import argps
@@ -176,7 +175,7 @@ class DataLoader(BaseDataLoader):
     
 class Charagram(Encoder):
     def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure, use_mid,
-                 share_vocab, position_embedding, max_position, st_weight, ed_weight, mid_vocab_size=0):
+                 share_vocab, position_embedding, max_position, st_weight, ed_weight, sin_embedding, mid_vocab_size=0):
         super(Charagram, self).__init__(embed_size)
         self.name = "charagram"
         self.src_vocab_size = src_vocab_size
@@ -188,6 +187,7 @@ class Charagram(Encoder):
         self.embed_size = embed_size
         self.position_embedding = position_embedding
         self.max_position = max_position
+        self.sin_embedding = sin_embedding
         self.st_weight, self.ed_weight = st_weight, ed_weight
         self.activate = torch.tanh
         # parameters
@@ -202,10 +202,24 @@ class Charagram(Encoder):
             self.src_ed_lookup = nn.Embedding(max_position, embed_size)
             self.trg_st_lookup = nn.Embedding(max_position, embed_size)
             self.trg_ed_lookup = nn.Embedding(max_position, embed_size)
-            torch.nn.init.xavier_uniform_(self.src_st_lookup.weight, gain=1)
-            torch.nn.init.xavier_uniform_(self.src_ed_lookup.weight, gain=1)
-            torch.nn.init.xavier_uniform_(self.trg_st_lookup.weight, gain=1)
-            torch.nn.init.xavier_uniform_(self.trg_ed_lookup.weight, gain=1)
+            if sin_embedding:
+                # Compute the positional encodings once in log space.
+                pe = torch.zeros(max_position, embed_size)
+                position = torch.arange(0, max_position).unsqueeze(1).float().to(device)
+                div_term = torch.arange(0, embed_size, 2) * -(math.log(10000.0) / embed_size)
+                div_term = div_term.to(device).float()
+                div_term = torch.exp(div_term)
+                pe[:, 0::2] = torch.sin(position * div_term)
+                pe[:, 1::2] = torch.cos(position * div_term)
+                self.assign_weight(self.src_st_lookup, pe)
+                self.assign_weight(self.src_ed_lookup, pe)
+                self.assign_weight(self.trg_st_lookup, pe)
+                self.assign_weight(self.trg_ed_lookup, pe)
+            else:
+                torch.nn.init.xavier_uniform_(self.src_st_lookup.weight, gain=1)
+                torch.nn.init.xavier_uniform_(self.src_ed_lookup.weight, gain=1)
+                torch.nn.init.xavier_uniform_(self.trg_st_lookup.weight, gain=1)
+                torch.nn.init.xavier_uniform_(self.trg_ed_lookup.weight, gain=1)
 
         self.bias_src = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
         self.bias_trg = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
@@ -225,14 +239,20 @@ class Charagram(Encoder):
                 if self.position_embedding:
                     self.mid_st_lookup = nn.Embedding(max_position, embed_size)
                     self.mid_ed_lookup = nn.Embedding(max_position, embed_size)
-                    torch.nn.init.xavier_uniform_(self.mid_st_lookup.weight, gain=1)
-                    torch.nn.init.xavier_uniform_(self.mid_ed_lookup.weight, gain=1)
+                    if sin_embedding:
+                        self.assign_weight(self.mid_st_lookup, pe)
+                        self.assign_weight(self.mid_ed_lookup, pe)
+                    else:
+                        torch.nn.init.xavier_uniform_(self.mid_st_lookup.weight, gain=1)
+                        torch.nn.init.xavier_uniform_(self.mid_ed_lookup.weight, gain=1)
 
                 self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
                 torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
 
         self.similarity_measure = similarity_measure
 
+    def assign_weight(self, lookup, weight):
+        lookup.weight = nn.Parameter(weight, requires_grad=False)
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
@@ -295,6 +315,7 @@ def save_model(model:Charagram, epoch, loss, optimizer, model_path):
                 "embed_size": model.embed_size,
                 "similarity_measure": model.similarity_measure.method,
                 "max_position": model.max_position,
+                "sin_embedding": model.sin_embedding,
                 "epoch": epoch,
                 "loss": loss}, model_path)
     print("[INFO] save model!")
@@ -306,9 +327,10 @@ if __name__ == "__main__":
         model = Charagram(data_loader.src_vocab_size, data_loader.trg_vocab_size,
                     args.embed_size, similarity_measure, args.use_mid, args.share_vocab,
                           position_embedding=args.position_embedding,
-                          max_position=data_loader.max_position + 1,
+                          max_position=args.max_position,
                           st_weight=args.st_weight,
                           ed_weight=args.ed_weight,
+                          sin_embedding=args.sin_embedding,
                           mid_vocab_size=data_loader.mid_vocab_size)
         optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model)
 
@@ -329,9 +351,10 @@ if __name__ == "__main__":
                         use_mid=args.use_mid,
                         share_vocab=args.share_vocab,
                         position_embedding=args.position_embedding,
-                        max_position=model_info.get("max_position", 0),
+                        max_position=args.max_position,
                         st_weight=args.st_weight,
                         ed_weight=args.ed_weight,
+                        sin_embedding=model_info.get("sin_embedding", False),
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
         model.load_state_dict(model_info["model_state_dict"])
         model.set_similarity_matrix()
