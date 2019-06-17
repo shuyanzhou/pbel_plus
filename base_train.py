@@ -330,9 +330,11 @@ class BaseDataLoader:
                                                     auto_encoding=self.mid_auto_encoding))
 
             if self.n_gram_threshold != 0:
-                self.test_src = self.n_gram_filter(self.test_src, self.src_freq_map, True)
-                self.test_trg = self.n_gram_filter(self.test_trg, self.trg_freq_map, True)
-                if self.use_mid:
+                if self.test_file.src_file_name is not None:
+                    self.test_src = self.n_gram_filter(self.test_src, self.src_freq_map, True)
+                if self.test_file.trg_file_name is not None:
+                    self.test_trg = self.n_gram_filter(self.test_trg, self.trg_freq_map, True)
+                if self.test_file.mid_file_name is not None:
                     self.test_mid = self.n_gram_filter(self.test_mid, self.mid_freq_map, True)
 
         def load_alia_map(self, fname):
