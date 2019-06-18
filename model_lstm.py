@@ -11,7 +11,7 @@ import panphon as pp
 from  torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import pickle
 from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
-from base_test import init_test, eval_dataset
+from base_test import init_test, eval_dataset, reset_unk_weight
 from config import argps
 from similarity_calculator import Similarity
 from utils.constant import  RANDOM_SEED, DEVICE, PP_VEC_SIZE
@@ -91,11 +91,14 @@ class Batch(BaseBatch):
 class DataLoader(BaseDataLoader):
     def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
                  train_file, dev_file, test_file,
-                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold):
+                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file,
+                 n_gram_threshold, position_embedding):
         super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, "<UNK>",
                                         train_file, dev_file, test_file,
                                         trg_encoding_num, mid_encoding_num,
-                                        trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold)
+                                        trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold,
+                                        position_embedding)
+        self.position_embedding = False
 
     def new_batch(self):
         return Batch()
@@ -109,7 +112,7 @@ class DataLoader(BaseDataLoader):
                 if encoding_num == 1:
                     # make it a list
                     string = [x2i_map[char] for char in tks[str_idx]]
-                    string = [string]
+                    all_string = [string]
                 else:
                     # multi version
                     if auto_encoding:
@@ -118,19 +121,17 @@ class DataLoader(BaseDataLoader):
                             string = [x2i_map[char] for char in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + list(tks[str_idx])]
                             # string = [x2i_map[char] for char in list(tks[str_idx])]
                             all_string.append(string)
-                        string = all_string
                     else: # wikidata alias, only for KB
                         all_string = []
                         alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
                         for i in range(encoding_num):
                             string = [x2i_map[char] for char in alias[i]]
                             all_string.append(string)
-                        string = all_string
-                for s in string:
+                for s in all_string:
                     for ss in s:
                         freq_map[ss] += 1
 
-                yield ([string], tks[id_idx])
+                yield ([all_string], tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
 
     def transform_one_batch(self, batch_data: list) -> list:
@@ -292,6 +293,7 @@ if __name__ == "__main__":
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
 
         model.load_state_dict(model_info["model_state_dict"], strict=False)
+        reset_unk_weight(model)
         model.set_similarity_matrix()
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
                      args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.trg_encoding_num,

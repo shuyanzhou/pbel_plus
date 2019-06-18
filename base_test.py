@@ -223,6 +223,12 @@ def eval_dataset(model:Encoder, similarity_calculator: Similarity,
 
         print("[INFO] take {:.4f}s to calculate similarity".format(time.time() - start_time))
 
+# reset the pad embedding to 0 at test time
+def reset_unk_weight(model):
+    for name, param in model.state_dict().items():
+        if "lookup" in name:
+            embed_size = param.shape[1]
+            param[0] = torch.zeros((1, embed_size))
 
 def init_test(args, DataLoader):
     test_file = FileInfo()

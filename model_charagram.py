@@ -9,7 +9,7 @@ import random
 import math
 import panphon as pp
 from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
-from base_test import init_test, eval_dataset
+from base_test import init_test, eval_dataset, reset_unk_weight
 from config import argps
 from similarity_calculator import Similarity
 from utils.constant import DEVICE, RANDOM_SEED
@@ -358,9 +358,9 @@ if __name__ == "__main__":
                         sin_embedding=model_info.get("sin_embedding", False),
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
         model.load_state_dict(model_info["model_state_dict"])
+        reset_unk_weight(model)
         model.set_similarity_matrix()
         eval_dataset(model, similarity_measure, base_data_loader, args.encoded_test_file, args.load_encoded_test,
                      args.encoded_kb_file, args.load_encoded_kb, intermedia_stuff, args.method, args.trg_encoding_num,
                      args.mid_encoding_num,
                      args.result_file, args.record_recall)
-
