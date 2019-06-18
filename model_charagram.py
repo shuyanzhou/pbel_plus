@@ -294,7 +294,7 @@ class Charagram(Encoder):
             # st_embed = st_lookup(input[:, :, -2])
             # ed_embed = ed_lookup(input[:, :, -1])
             # embed = word_embed + self.st_weight * st_embed + self.ed_weight * ed_embed
-            embed = lookup(input[:, :, -3]) + self.st_weight * st_lookup(input[:, :, -2]) + self.ed_weight * ed_lookup(input[:, :, -1])
+            embed = lookup(input[:, :, 0]) * torch.sigmoid(st_lookup(input[:, :, 1])) * torch.sigmoid(ed_lookup(input[:, :, 2]))
             embed = embed.masked_fill(mask==0, 0)
             encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
 
