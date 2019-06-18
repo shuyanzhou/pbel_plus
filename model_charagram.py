@@ -289,11 +289,12 @@ class Charagram(Encoder):
 
         # will contain 3 part
         if self.position_embedding:
-            word_input, st_input, ed_input = torch.unbind(input, dim=-1)
-            word_embed = lookup(word_input)
-            st_embed = st_lookup(st_input)
-            ed_embed = ed_lookup(ed_input)
-            embed = word_embed + self.st_weight * st_embed + self.ed_weight * ed_embed
+            # word_input, st_input, ed_input = torch.unbind(input, dim=-1)
+            # word_embed = lookup(input[:, :, -3])
+            # st_embed = st_lookup(input[:, :, -2])
+            # ed_embed = ed_lookup(input[:, :, -1])
+            # embed = word_embed + self.st_weight * st_embed + self.ed_weight * ed_embed
+            embed = lookup(input[:, :, -3]) + self.st_weight * st_lookup(input[:, :, -2]) + self.ed_weight * ed_lookup(input[:, :, -1])
             embed = embed.masked_fill(mask==0, 0)
             encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
 

@@ -31,7 +31,7 @@ def load_n_gram_embedding(plang, model):
     model = model_info["model_state_dict"]
     src_lookup = model["src_lookup.weight"]
     lookup_norm = torch.norm(src_lookup, dim=1)
-    print("look up shape:", lookup_norm.shape)
+    # print("look up shape:", lookup_norm.shape)
     return lookup_norm
 
 def get_ngram(string, ngram_list=(2, 3, 4, 5)):
@@ -62,14 +62,18 @@ def extract_n_gram(tlang, test_data, encode):
 
 def calc_distribution(c2i_map, n_gram_embedding, test_n_gram, tlang, max_norm=None):
     norm = []
+    unk = 0
+    tot = 0
     for n_gram in test_n_gram:
         if n_gram in c2i_map:
             norm.append(n_gram_embedding[c2i_map[n_gram]].cpu())
+        else:
+            norm.append(0.0)
+            unk += 1
+        tot += 1
     norm = np.array(norm)
-    hist, bin_edge = np.histogram(norm, bins=30)
-    hist = [x / np.sum(hist) for x in hist]
-    print(np.sum(hist))
-    print(hist, "\n", bin_edge)
+
+    print("unk:",unk, "tot:", tot, "overlap:", (tot -  unk) / tot)
 
     if max_norm is None:
         max_norm  = np.max(norm)
@@ -84,18 +88,21 @@ if __name__ == "__main__":
     all_encode = ["ipa", "graph", "ipa", "ipa", "ipa", "graph", "graph"]
     test_data = ["ee-me_train", "me_test"]
     for idx, (plang, tlang, other, encode) in enumerate(zip(all_plang, all_tlang, all_other, all_encode)):
-        # for i in range(2):
-        #     cur_tlang = [all_plang, all_tlang][i][idx]
-        #     cur_test_data = test_data[i]
-        #     model = f"ee-me_char-cosine-hinge_{encode}"
-        #     c2i_map, _ = load_c2i_map(plang, model)
-        #     n_gram_embedding = load_n_gram_embedding(plang, model)
-        #     test_n_gram = extract_n_gram(cur_tlang, cur_test_data, encode)
-        #     if i == 0:
-        #         max_norm = None
-        #     max_norm = calc_distribution(c2i_map, n_gram_embedding, test_n_gram, cur_tlang, max_norm)
-        # plt.legend()
-        # plt.savefig(f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/hist/{tlang}-{all_plang[idx]}.hist.png")
+        print("===================")
+        print(plang, tlang, other, encode)
+        for i in range(2):
+            cur_tlang = [all_plang, all_tlang][i][idx]
+            cur_test_data = test_data[i]
+            model = f"ee-me_char-cosine-hinge_{encode}"
+            c2i_map, _ = load_c2i_map(plang, model)
+            n_gram_embedding = load_n_gram_embedding(plang, model)
+            test_n_gram = extract_n_gram(cur_tlang, cur_test_data, encode)
+            if i == 0:
+                max_norm = None
+            max_norm = calc_distribution(c2i_map, n_gram_embedding, test_n_gram, cur_tlang, max_norm)
+        plt.legend()
+        plt.savefig(f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/hist/{tlang}-{all_plang[idx]}.hist.png")
+        plt.clf()
 
         for i in range(2):
             cur_tlang = [all_other, all_tlang][i][idx]
@@ -109,3 +116,4 @@ if __name__ == "__main__":
             max_norm = calc_distribution(c2i_map, n_gram_embedding, test_n_gram, cur_tlang, max_norm)
         plt.legend()
         plt.savefig(f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/hist/{tlang}-{all_other[idx]}.hist.png")
+        plt.clf()
