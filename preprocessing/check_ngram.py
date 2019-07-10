@@ -81,39 +81,89 @@ def calc_distribution(c2i_map, n_gram_embedding, test_n_gram, tlang, max_norm=No
     plt.hist(norm, bins=np.linspace(0, max_norm, 40), weights=np.ones(len(norm)) / len(norm), label=tlang, alpha=0.5)
     return np.max(norm)
 
+def calc_character_overlap(plang, tlang, encode):
+    base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/data"
+    if encode == "ipa":
+        encode = ".ipa"
+    else:
+        encode = ""
+    pchar = []
+    tchar = []
+    for data, lang, all_char in zip(["ee-me_train", "me_test"], [plang, tlang], [pchar, tchar]):
+        data_path = os.path.join(base_path, f"{data}_en-{lang}_links{encode}")
+        with open(data_path, "r", encoding="utf-8") as f:
+            for line in f:
+                tks = line.strip().split(" ||| ")
+                s = tks[2]
+                all_char += list(s)
+
+    pchar = list(set(pchar))
+    pchar = {k: 1 for k in pchar}
+    tot = len(tchar)
+    unk = 0
+    for c in tchar:
+        if c not in pchar:
+            unk += 1
+    print(unk, tot, (tot - unk) / tot)
+
+def calc_n_gram_overlap(plang, tlang, encode):
+    base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/data"
+    if encode == "ipa":
+        encode = ".ipa"
+    else:
+        encode = ""
+    pchar = []
+    tchar = []
+    for data, lang, all_char in zip(["ee-me_train", "me_test"], [plang, tlang], [pchar, tchar]):
+        data_path = os.path.join(base_path, f"{data}_en-{lang}_links{encode}")
+        with open(data_path, "r", encoding="utf-8") as f:
+            for line in f:
+                tks = line.strip().split(" ||| ")
+                s = tks[2]
+                all_char += get_ngram(s)
+    pchar = list(set(pchar))
+    pchar = {k: 1 for k in pchar}
+    tot = len(tchar)
+    unk = 0
+    for c in tchar:
+        if c not in pchar:
+            unk += 1
+    print(unk, tot, (tot - unk) / tot)
+
 if __name__ == "__main__":
-    all_plang = ["am", "hi", "hi", "hi", "th", "so", "rn"]
-    all_tlang = ["ti", "mr", "te", "il10", "lo", "il6", "il9"]
-    all_other = ["hi", "hi", "ta", "am", "hi", "rn", "so"]
-    all_encode = ["ipa", "graph", "ipa", "ipa", "ipa", "graph", "graph"]
+    all_plang = ["am", "hi", "hi", "hi", "th", "so", "rn", "so"]
+    all_tlang = ["il5", "mr", "te", "il10", "lo", "il6", "il9", "il9"]
+    all_other = ["hi", "hi", "ta", "am", "hi", "rn", "so", "so"]
+    all_encode = ["ipa", "graph", "ipa", "ipa", "ipa", "graph", "graph", "graph"]
     test_data = ["ee-me_train", "me_test"]
     for idx, (plang, tlang, other, encode) in enumerate(zip(all_plang, all_tlang, all_other, all_encode)):
         print("===================")
         print(plang, tlang, other, encode)
-        for i in range(2):
-            cur_tlang = [all_plang, all_tlang][i][idx]
-            cur_test_data = test_data[i]
-            model = f"ee-me_char-cosine-hinge_{encode}"
-            c2i_map, _ = load_c2i_map(plang, model)
-            n_gram_embedding = load_n_gram_embedding(plang, model)
-            test_n_gram = extract_n_gram(cur_tlang, cur_test_data, encode)
-            if i == 0:
-                max_norm = None
-            max_norm = calc_distribution(c2i_map, n_gram_embedding, test_n_gram, cur_tlang, max_norm)
-        plt.legend()
-        plt.savefig(f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/hist/{tlang}-{all_plang[idx]}.hist.png")
-        plt.clf()
-
-        for i in range(2):
-            cur_tlang = [all_other, all_tlang][i][idx]
-            cur_test_data = test_data[i]
-            model = f"ee-me_char-cosine-hinge_{encode}"
-            c2i_map, _ = load_c2i_map(other, model)
-            n_gram_embedding = load_n_gram_embedding(other, model)
-            test_n_gram = extract_n_gram(cur_tlang, cur_test_data, encode)
-            if i == 0:
-                max_norm = None
-            max_norm = calc_distribution(c2i_map, n_gram_embedding, test_n_gram, cur_tlang, max_norm)
-        plt.legend()
-        plt.savefig(f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/hist/{tlang}-{all_other[idx]}.hist.png")
-        plt.clf()
+        # for i in range(2):
+        #     cur_tlang = [all_plang, all_tlang][i][idx]
+        #     cur_test_data = test_data[i]
+        #     model = f"ee-me_char-cosine-hinge_{encode}"
+        #     c2i_map, _ = load_c2i_map(plang, model)
+        #     n_gram_embedding = load_n_gram_embedding(plang, model)
+        #     test_n_gram = extract_n_gram(cur_tlang, cur_test_data, encode)
+        #     if i == 0:
+        #         max_norm = None
+        #     max_norm = calc_distribution(c2i_map, n_gram_embedding, test_n_gram, cur_tlang, max_norm)
+        # plt.legend()
+        # plt.savefig(f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/hist/{tlang}-{all_plang[idx]}.hist.png")
+        # plt.clf()
+        #
+        # for i in range(2):
+        #     cur_tlang = [all_other, all_tlang][i][idx]
+        #     cur_test_data = test_data[i]
+        #     model = f"ee-me_char-cosine-hinge_{encode}"
+        #     c2i_map, _ = load_c2i_map(other, model)
+        #     n_gram_embedding = load_n_gram_embedding(other, model)
+        #     test_n_gram = extract_n_gram(cur_tlang, cur_test_data, encode)
+        #     if i == 0:
+        #         max_norm = None
+        #     max_norm = calc_distribution(c2i_map, n_gram_embedding, test_n_gram, cur_tlang, max_norm)
+        # plt.legend()
+        # plt.savefig(f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/results/hist/{tlang}-{all_other[idx]}.hist.png")
+        # plt.clf()
+        calc_n_gram_overlap(plang, tlang, encode)

@@ -69,9 +69,13 @@ def get_analysis_file(lang, model, gold_file, result_file, new_result_file):
                    "kw": "kin-Latn",
                    "si": "sin-Sinh",
                    "il10":"sin-Sinh",
+                   "il10-all":"sin-Sinh",
                    "il5":"tir-Ethi",
+                   "il5-all":"tir-Ethi",
                    "il6":"som-Latn",
-                   "il9":"run-Latn"}
+                   "il6-all":"som-Latn",
+                   "il9":"run-Latn",
+                   "il9-all":"run-Latn"}
 
     epi = epitran.Epitran(epitran_map[lang])
     entity_type_map, id_name_map = get_type_map()

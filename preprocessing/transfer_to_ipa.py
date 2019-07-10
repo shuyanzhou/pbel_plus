@@ -19,7 +19,11 @@ def to_ipa(fname, lang1, lang2, fsave=None):
                    "kw": "kin-Latn",
                    "si": "sin-Sinh",
                    "rn": "run-Latn",
-                   "so": "som-Latn"}
+                   "so": "som-Latn",
+                   "il5": "tir-Ethi",
+                   "il6":"orm-Latn",
+                   "il9": "kin-Latn",
+                   "il10": "sin-Sinh"}
     if lang1 is not None:
         epi1 = epitran.Epitran(epitran_map[lang1])
     epi2 = epitran.Epitran(epitran_map[lang2])
@@ -49,6 +53,7 @@ def alia_to_ipa(fname):
                    "ti": "tir-Ethi",
                    "te": "tel-Telu",
                    "lo": "lao-Laoo"}
+
     epi1 = epitran.Epitran(epitran_map["en"])
     with open(fname, "r", encoding="utf-8") as f, open(fname + ".ipa", "w+", encoding="utf-8") as fout:
         for line in f:
@@ -60,16 +65,36 @@ def alia_to_ipa(fname):
             fout.write(" ||| ".join(tks) + "\n")
 
 
+def kb_to_ipa(fname):
+    epi1 = epitran.Epitran("eng-Latn")
+    with open(fname, "r", encoding="utf-8") as f, open(fname + ".ipa", "w+", encoding="utf-8") as fout:
+        for line in f:
+            tks = line.strip().split(" ||| ")
+            if len(tks) == 3:
+                ipa_entity = epi1.transliterate(tks[1])
+                tks[1] = ipa_entity
+                print(tks[1])
+            fout.write(" ||| ".join(tks) + "\n")
 
-
-base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/data"
-
-lang = sys.argv[1]
-for prefix in ["ee", "ee-me", "me"]:
-    for part in ["train", "val", "test"]:
-        cur_fname = os.path.join(base_path, f"{prefix}_{part}_en-{lang}_links")
-        if os.path.exists(cur_fname):
-            if part in ["train", "val"]:
-                to_ipa(cur_fname, "en", lang)
-            else:
-                to_ipa(cur_fname, None, lang)
+if __name__ == "__main__":
+    num = sys.argv[1]
+    print(num)
+    kb_name = f"/projects/tir2/users/shuyanzh/lorelei_data/pbel/lor_kb/lor_kb_split/split_lor_kb_{num}"
+    kb_to_ipa(kb_name)
+    # base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/data"
+    # lang = sys.argv[1]
+    # for prefix in ["ee", "ee-me", "me"]:
+    #     for part in ["train", "val", "test"]:
+    #         cur_fname = os.path.join(base_path, f"{prefix}_{part}_en-{lang}_links")
+    #         if os.path.exists(cur_fname):
+    #             if part in ["train", "val", ""]:
+    #                 to_ipa(cur_fname, "en", lang)
+    #             else:
+    #                 to_ipa(cur_fname, None, lang)
+    #
+    # cur_fname = os.path.join(base_path, f"en-{lang}_links")
+    # to_ipa(cur_fname, "en", lang)
+    # for lang in ["il5", "il6", "il9", "il10"]:
+    #     cur_fname = os.path.join(base_path, f"me_test_en-{lang}-all_links")
+    #     if os.path.exists(cur_fname):
+    #         to_ipa(cur_fname, None, lang)
