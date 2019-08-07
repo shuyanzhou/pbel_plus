@@ -357,18 +357,21 @@ class BaseDataLoader:
                     self.test_mid = self.n_gram_filter(self.test_mid, self.mid_freq_map, True)
 
         def load_alia_map(self, fname):
-            self.title_alia_map = defaultdict(list)
-            self.id_alia_map = defaultdict(list)
-            with open(fname, "r", encoding="utf-8") as f:
-                 for line in f:
-                    tks = line.strip().split(" ||| ")
-                    if len(tks) != 4:
-                        continue
-                    aka = tks[3].split(" || ")
-                    self.title_alia_map[tks[2]] = aka
-                    if tks[1] != "NAN":
-                        self.id_alia_map[tks[1]] = aka
-            print(f"[INFO] there are {len(self.title_alia_map)} / {len(self.id_alia_map)} items in aka")
+            if fname != "HOLDER":
+                self.title_alia_map = defaultdict(list)
+                self.id_alia_map = defaultdict(list)
+                with open(fname, "r", encoding="utf-8") as f:
+                     for line in f:
+                        tks = line.strip().split(" ||| ")
+                        if len(tks) != 4:
+                            continue
+                        aka = tks[3].split(" || ")
+                        self.title_alia_map[tks[2]] = aka
+                        if tks[1] != "NAN":
+                            self.id_alia_map[tks[1]] = aka
+                print(f"[INFO] there are {len(self.title_alia_map)} / {len(self.id_alia_map)} items in aka")
+            else:
+                print("[WARNING] no alia file found!")
 
 
         def get_alias(self, tks, str_idx, id_idx, encoding_num):

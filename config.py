@@ -25,7 +25,7 @@ def argps():
     parser.add_argument("--pivot_type_idx", type=int, default=3)
     parser.add_argument("--trg_auto_encoding", type=str2bool, default=False)
     parser.add_argument("--mid_auto_encoding", type=str2bool, default=False)
-    parser.add_argument("--alia_file", type=str)
+    parser.add_argument("--alia_file", type=str, default="HOLDER")
     # mega batch
     parser.add_argument("--mega_size", type=int, default=40)
     parser.add_argument("--method", default="base")
@@ -116,7 +116,7 @@ def argps():
     args.result_file["pivot_str"] = args.pivot_result + ".str"
 
     # print config
-    for k, v in vars(args).items():
-        if v:
-            print(str(k) + ":", v)
+    # for k, v in vars(args).items():
+    #     if v:
+    #         print(str(k) + ":", v)
     return args
