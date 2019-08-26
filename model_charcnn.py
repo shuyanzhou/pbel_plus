@@ -211,7 +211,6 @@ class CharCNN(Encoder):
             if is_src:
                 lookup = self.src_lookup
                 conv1d_list = self.src_conv1d_list
-
                 input, mask = batch.get_src()
                 if self.position_embedding:
                     raise NotImplementedError
@@ -247,10 +246,14 @@ class CharCNN(Encoder):
             # [batch_size, hidden_size, length - window_size + 1] * len(window_size)
             conv_result_list = [self.activate(conv1d_layer(reshape_embed)) for conv1d_layer in conv1d_list]
             masked_conv_result_list = [(x - (1 - cur_mask) * 1e10) for cur_mask, x in zip(all_masks, conv_result_list)]
+            # [batch_size, hidden_size]
             max_pooling_list = [F.max_pool1d(conv_result, kernel_size=conv_result.size(2)).squeeze(2) for conv_result in masked_conv_result_list]
             dropout_list = [self.dropout(max_pooling) for max_pooling in max_pooling_list]
-            concat = torch.cat(dropout_list, dim=1)
-            encode = self.linear(concat)
+            # concat = torch.cat(dropout_list, dim=1)
+            # encode = self.linear(concat)
+            # [batch_size, hidden_size, len(window_size)]
+            concat = torch.stack(dropout_list, dim=2)
+            encode = torch.sum(concat, dim=-1, keepdim=False)
         return encode
 
 
