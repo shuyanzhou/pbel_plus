@@ -48,6 +48,8 @@ def argps():
     parser.add_argument("--mid_id_idx", type=int, default=0)
     parser.add_argument("--mid_proportion", help="the proportion used in the similarity matrix", type=float, default=0.3)
 
+    # for cnn
+    parser.add_argument("--pooling_method", choices=("mean", "sum", "max"))
     # train
     parser.add_argument("--train_file", default="")
     parser.add_argument("--dev_file", default="")
@@ -65,7 +67,7 @@ def argps():
     parser.add_argument("--objective", choices=("hinge", "mle"), required=True)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--embed_size", type=int, default=64)
-    parser.add_argument("--hidden_size", help="bi-direction", type=int, default=1024)
+    parser.add_argument("--hidden_size", help="bi-direction", type=int)
     parser.add_argument("--margin", type=int, default=1)
     parser.add_argument("--trainer", choices=('adam', 'sgd', 'sgd_mo', 'rmsp'))
     parser.add_argument("--learning_rate", type=float)

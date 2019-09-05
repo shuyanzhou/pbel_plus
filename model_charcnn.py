@@ -254,9 +254,8 @@ class CharCNN(Encoder):
                 masked_conv_result_list = [cur_mask * x for cur_mask, x in zip(all_masks, conv_result_list)]
                 raw_pooling_list = [torch.sum(conv_result, dim=-1, keepdim=False) for conv_result in masked_conv_result_list]
                 if self.pooling_method == "mean":
-                    # average
-                    # calculate valid length, [batch_size * 1]
-                    valid_length_list = [torch.sum(cur_mask, dim=-1, keepdim=True) for cur_mask in all_masks]
+                    # average, calculate valid length, [batch_size * 1]
+                    valid_length_list = [torch.sum(cur_mask.squeeze(1), dim=-1, keepdim=True) for cur_mask in all_masks]
                     pooling_list = [pooling / valid_length for pooling, valid_length in zip(raw_pooling_list, valid_length_list)]
                 else:
                     pooling_list = raw_pooling_list
@@ -277,6 +276,7 @@ def save_model(model: CharCNN, epoch, loss, optimizer, model_path):
                 "src_vocab_size": model.src_vocab_size,
                 "trg_vocab_size": model.trg_vocab_size,
                 "mid_vocab_size": model.mid_vocab_size,
+                "pooling_method": model.pooling_method,
                 "embed_size": model.embed_size,
                 "hidden_size": model.hidden_size,
                 "similarity_measure": model.similarity_measure.method,
@@ -299,6 +299,7 @@ if __name__ == "__main__":
                           st_weight=args.st_weight,
                           ed_weight=args.ed_weight,
                           sin_embedding=args.sin_embedding,
+                          pooling_method=args.pooling_method,
                           mid_vocab_size=data_loader.mid_vocab_size)
         optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model)
 
@@ -325,6 +326,7 @@ if __name__ == "__main__":
                           st_weight=args.st_weight,
                           ed_weight=args.ed_weight,
                           sin_embedding=model_info.get("sin_embedding", False),
+                          pooling_method= model_info["pooling_method"],
                           mid_vocab_size=model_info.get("mid_vocab_size", 0))
         model.load_state_dict(model_info["model_state_dict"])
         reset_unk_weight(model)
