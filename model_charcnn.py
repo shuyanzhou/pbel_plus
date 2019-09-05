@@ -154,8 +154,8 @@ class DataLoader(BaseDataLoader):
 
 
 class CharCNN(Encoder):
-    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, similarity_measure, use_mid,
-                 share_vocab, position_embedding, max_position, st_weight, ed_weight, sin_embedding, mid_vocab_size=0):
+    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, similarity_measure, use_mid,
+                 share_vocab, position_embedding, max_position, st_weight, ed_weight, sin_embedding, pooling_method, mid_vocab_size=0):
         super(CharCNN, self).__init__(embed_size)
         self.name = "charcnn"
         self.src_vocab_size = src_vocab_size
@@ -166,10 +166,11 @@ class CharCNN(Encoder):
         self.embed_size = embed_size
         self.position_embedding = position_embedding
         self.max_position = 0
-        self.hidden_size = 300
+        self.hidden_size = hidden_size
         self.sin_embedding = sin_embedding
         self.st_weight, self.ed_weight = st_weight, ed_weight
         self.activate = F.relu
+        self.pooling_method = pooling_method
         # parameters
         self.src_lookup = nn.Embedding(src_vocab_size, embed_size, padding_idx=0)
         torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
@@ -191,7 +192,7 @@ class CharCNN(Encoder):
                                  stride=1, padding=pd, dilation=1, groups=1, bias=True) for pd, ws in zip(self.padding, self.window_size)])
 
         self.dropout = nn.Dropout(p=0.5)
-        self.linear = nn.Linear(self.hidden_size * len(self.window_size), self.hidden_size)
+        self.linear = nn.Linear(self.hidden_size * len(self.window_size), 300)
         torch.nn.init.xavier_uniform_(self.linear.weight)
 
         self.similarity_measure = similarity_measure
@@ -244,12 +245,24 @@ class CharCNN(Encoder):
             # [batch_size, embed_size, max_len]
             reshape_embed = torch.transpose(embed, 1, 2)
             # [batch_size, hidden_size, length - window_size + 1] * len(window_size)
-            conv_result_list = [conv1d_layer(reshape_embed) for conv1d_layer in conv1d_list]
-            conv_result_list = [self.activate(result) for result in conv_result_list]
-            masked_conv_result_list = [(x - (1 - cur_mask) * 1e10) for cur_mask, x in zip(all_masks, conv_result_list)]
+            conv_result_list = [self.activate(conv1d_layer(reshape_embed)) for conv1d_layer in conv1d_list]
             # [batch_size, hidden_size]
-            max_pooling_list = [F.max_pool1d(conv_result, kernel_size=conv_result.size(2)).squeeze(2) for conv_result in masked_conv_result_list]
-            dropout_list = [self.dropout(max_pooling) for max_pooling in max_pooling_list]
+            if self.pooling_method == "max":
+                masked_conv_result_list = [(x - (1 - cur_mask) * 1e10) for cur_mask, x in zip(all_masks, conv_result_list)]
+                pooling_list = [F.max_pool1d(conv_result, kernel_size=conv_result.size(2)).squeeze(2) for conv_result in masked_conv_result_list]
+            elif self.pooling_method in ["mean", "sum"]:
+                masked_conv_result_list = [cur_mask * x for cur_mask, x in zip(all_masks, conv_result_list)]
+                raw_pooling_list = [torch.sum(conv_result, dim=-1, keepdim=False) for conv_result in masked_conv_result_list]
+                if self.pooling_method == "mean":
+                    # average
+                    # calculate valid length, [batch_size * 1]
+                    valid_length_list = [torch.sum(cur_mask, dim=-1, keepdim=True) for cur_mask in all_masks]
+                    pooling_list = [pooling / valid_length for pooling, valid_length in zip(raw_pooling_list, valid_length_list)]
+                else:
+                    pooling_list = raw_pooling_list
+            else:
+                raise NotImplementedError
+            dropout_list = [self.dropout(pooling) for pooling in pooling_list]
             concat = torch.cat(dropout_list, dim=1)
             encode = self.linear(concat)
             # [batch_size, hidden_size, len(window_size)]
@@ -265,6 +278,7 @@ def save_model(model: CharCNN, epoch, loss, optimizer, model_path):
                 "trg_vocab_size": model.trg_vocab_size,
                 "mid_vocab_size": model.mid_vocab_size,
                 "embed_size": model.embed_size,
+                "hidden_size": model.hidden_size,
                 "similarity_measure": model.similarity_measure.method,
                 "max_position": model.max_position,
                 "sin_embedding": model.sin_embedding,
@@ -278,7 +292,8 @@ if __name__ == "__main__":
     if args.is_train:
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
         model = CharCNN(data_loader.src_vocab_size, data_loader.trg_vocab_size,
-                          args.embed_size, similarity_measure, args.use_mid, args.share_vocab,
+                          args.embed_size, args.hidden_size,
+                          similarity_measure, args.use_mid, args.share_vocab,
                           position_embedding=args.position_embedding,
                           max_position=args.max_position,
                           st_weight=args.st_weight,
@@ -301,6 +316,7 @@ if __name__ == "__main__":
         similarity_measure = Similarity(args.similarity_measure)
         model = CharCNN(model_info["src_vocab_size"], model_info["trg_vocab_size"],
                           model_info["embed_size"],
+                          model_info["hidden_size"],
                           similarity_measure=similarity_measure,
                           use_mid=args.use_mid,
                           share_vocab=args.share_vocab,

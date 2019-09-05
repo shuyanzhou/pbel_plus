@@ -7,8 +7,8 @@ file_suffix = ["", ".ipa"]
 file_prefix = ["", "ipa_"]
 file_name = ["graph", "ipa"]
 
-all_lang = [["hi","am", "id", "so", "rn", "am"],
-            ["th", "tr", "ta", "am", "hi", "so", "rn"]]
+all_lang = [["hi","am", "id", "so", "rn", "am", "tl", "id", "sv", "ceb"],
+            ["th", "tr", "ta", "am", "hi", "so", "rn", "tl", "id", "ceb", "de"]]
 
 with open("./train_template.sh", "r", encoding="utf-8") as f:
     t = f.read()

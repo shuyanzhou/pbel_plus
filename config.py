@@ -116,7 +116,7 @@ def argps():
     args.result_file["pivot_str"] = args.pivot_result + ".str"
 
     # print config
-    # for k, v in vars(args).items():
-    #     if v:
-    #         print(str(k) + ":", v)
+    for k, v in vars(args).items():
+        if v:
+            print(str(k) + ":", v)
     return args

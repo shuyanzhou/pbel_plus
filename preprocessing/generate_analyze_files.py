@@ -21,7 +21,7 @@ def calc_dedup_recall(fname):
     tot = 0
     acc = 0
     all_mentions = set()
-    with open(fname, "r", encoding="utf-8") as f:
+    with open(fname, "r", encoding="utf-8") as f, open(fname.replace("anl", "dedup.anl"), "w+", encoding="utf-8") as fout:
         for line in f:
             tks = line.strip().split(" ||| ")
             gold, mention, candidate = tks[1], tks[2], tks[4]
@@ -29,6 +29,7 @@ def calc_dedup_recall(fname):
                 if gold in candidate.split(" || "):
                     acc += 1
                 all_mentions.add(mention)
+                fout.write(line)
     tot = len(all_mentions)
     print(acc, tot, acc/tot)
 
@@ -59,35 +60,35 @@ def get_analysis_file(lang, gold_file, result_file, new_result_file):
     tot = 0
     recall_dict = {'1': 0, '2': 0, '5': 0, '10': 0, '20': 0, '30': 0}
 
-    if not os.path.exists(new_result_file):
-        with open(gold_file, "r", encoding="utf-8") as fg:
-            with open(result_file, "r", encoding="utf-8") as fr:
-                with open(new_result_file, "w+", encoding="utf-8") as fout:
-                    for gold_line, result_line in zip(fg, fr):
-                        tot += 1
-                        gold_en_string, mention = gold_line.strip().split(" ||| ")[1:3]
-                        gold_type = entity_type_map.get(gold_en_string, "UNK")
-                        _, entity_info = result_line.split(" ||| ")
-                        mention_ipa = epi.transliterate(mention)
-                        entity_info = [x.split(" | ") for x in entity_info.split(" || ")]
-                        entity_ids = [x[0] for x in entity_info]
-                        entity_scores = [float(x[1]) for x in entity_info]
-                        # remove duplicate
-                        entity_max_score = defaultdict(float)
-                        for eid, escore in zip(entity_ids, entity_scores):
-                            entity_max_score[eid] = max(entity_max_score[eid], escore)
-                        entity_ids = [*entity_max_score]
-                        scores = [entity_max_score[x] for x in entity_ids]
-                        sort_idx = np.argsort(np.array(scores))[::-1]
-                        sort_idx = sort_idx[:30]
-                        entity_ids = [entity_ids[x] for x in sort_idx]
-                        entity_strings = [id_name_map[x] for x in entity_ids]
-                        fout.write(gold_type + " ||| " + gold_en_string + " ||| " + mention_ipa + " ||| " + mention + " ||| " + " || ".join(entity_strings) + "\n")
+    # if not os.path.exists(new_result_file):
+    with open(gold_file, "r", encoding="utf-8") as fg:
+        with open(result_file, "r", encoding="utf-8") as fr:
+            with open(new_result_file, "w+", encoding="utf-8") as fout:
+                for gold_line, result_line in zip(fg, fr):
+                    tot += 1
+                    gold_en_string, mention = gold_line.strip().split(" ||| ")[1:3]
+                    gold_type = entity_type_map.get(gold_en_string, "UNK")
+                    _, entity_info = result_line.split(" ||| ")
+                    mention_ipa = epi.transliterate(mention)
+                    entity_info = [x.split(" | ") for x in entity_info.split(" || ")]
+                    entity_ids = [x[0] for x in entity_info]
+                    entity_scores = [float(x[1]) for x in entity_info]
+                    # remove duplicate
+                    entity_max_score = defaultdict(float)
+                    for eid, escore in zip(entity_ids, entity_scores):
+                        entity_max_score[eid] = max(entity_max_score[eid], escore)
+                    entity_ids = [*entity_max_score]
+                    scores = [entity_max_score[x] for x in entity_ids]
+                    sort_idx = np.argsort(np.array(scores))[::-1]
+                    sort_idx = sort_idx[:30]
+                    entity_ids = [entity_ids[x] for x in sort_idx]
+                    entity_strings = [id_name_map[x] for x in entity_ids]
+                    fout.write(gold_type + " ||| " + gold_en_string + " ||| " + mention_ipa + " ||| " + mention + " ||| " + " || ".join(entity_strings) + "\n")
 
-                        for topk in recall_dict.keys():
-                            topk = int(topk)
-                            if gold_en_string in entity_strings[:topk]:
-                                recall_dict[str(topk)] += 1
+                    for topk in recall_dict.keys():
+                        topk = int(topk)
+                        if gold_en_string in entity_strings[:topk]:
+                            recall_dict[str(topk)] += 1
 
         for topk, recall in recall_dict.items():
             print("[INFO] top {}: {:.2f}/{:.2f}={:.4f}".format(topk, recall, tot, recall / tot))

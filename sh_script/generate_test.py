@@ -7,7 +7,7 @@ file_suffix = ["", ".ipa"]
 file_prefix = ["", "ipa_"]
 file_name = ["graph", "ipa"]
 
-hl = ["th", "ta", "hi", "so", "rn", "am"]
+hl = ["th", "ta", "hi", "so", "rn", "am", "id", "tl", "ceb", "sv","de"]
 ll = ["lo", "mr", "te", "il5", "il6", "il9", "il10"]
 
 all_hl = []
@@ -16,14 +16,14 @@ for x in hl:
         all_hl.append(x)
 
 all_ll = []
-for i in range(6):
+for i in range(len(hl)):
     for x in ll:
         all_ll.append(x)
 
 all_lang = [
             [
-                ["hi", "am", "id", "so", "rn", "so", "rn"],
-                ["mr", "il5", "jv", "il6", "il9", "il9", "il6"]
+                ["hi", "am", "id", "so", "rn", "so", "rn", "id", "sv", "id"],
+                ["mr", "il5", "jv", "il6", "il9", "il9", "il6", "il6", "il6", "il6"]
             ],
             # [
             #     ["th", "am", "am", "hi", "hi"],
