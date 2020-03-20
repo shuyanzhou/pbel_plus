@@ -1,14 +1,12 @@
-from collections import defaultdict
 import functools
 import torch
-import random
-import sys
 import numpy as np
 import time
-from models.base_train import BaseDataLoader, Encoder, FileInfo, list2nparr, append_multiple_encodings, merge_encodings
+from utils.func import list2nparr, append_multiple_encodings, FileInfo
+from models.base_encoder import Encoder
+from data_loader.data_loader import BaseDataLoader, BaseBatch
 from utils.similarity_calculator import Similarity
-from typing import List
-from utils.constant import RANDOM_SEED, PP_VEC_SIZE, DEVICE
+from utils.constant import DEVICE
 
 device = DEVICE
 print = functools.partial(print, flush=True)

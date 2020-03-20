@@ -1,12 +1,10 @@
-import sys
-from collections import defaultdict
 import functools
 import torch
 from torch import nn
-from torch import optim
 import random
-import math
-from models.base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
+from models.base_train import run, init_train
+from models.base_encoder import Encoder, create_optimizer
+from data_loader.data_loader import BaseBatch, BaseDataLoader
 from models.base_test import init_test, eval_dataset, reset_unk_weight
 from utils.similarity_calculator import Similarity
 from utils.constant import DEVICE, RANDOM_SEED
@@ -53,13 +51,6 @@ class Batch(BaseBatch):
         self.trg_kb_ids = trg_kb_ids
         self.trg_flag = True
 
-    # def set_mega(self, mega_tensor, mega_mask, mega_trg_kb_ids):
-    #     self.mega_tensor = mega_tensor.long()
-    #     self.mega_mask = mega_mask
-    #     self.mega_trg_kb_ids = mega_trg_kb_ids
-    #     self.mega_flag = True
-    #     self.negative_num = 1
-
     def set_mid(self, mid_tensor, mid_mask, mid_kb_ids):
         self.mid_tensor = mid_tensor.long()
         self.mid_mask = mid_mask
@@ -73,9 +64,6 @@ class Batch(BaseBatch):
         if self.trg_flag:
             self.trg_tensor = self.trg_tensor.to(device)
             self.trg_mask = self.trg_mask.to(device)
-        # if self.mega_flag:
-        #     self.mega_tensor = self.mega_tensor.to(device)
-        #     self.mega_mask = self.mega_mask.to(device)
         if self.mid_flag:
             self.mid_tensor = self.mid_tensor.to(device)
             self.mid_mask = self.mid_mask.to(device)
@@ -90,8 +78,6 @@ class Batch(BaseBatch):
     def get_trg(self):
         return self.trg_tensor, self.trg_mask
 
-    # def get_mega(self):
-    #     return self.mega_tensor, self.mega_mask
 
     def get_mid(self):
         return self.mid_tensor, self.mid_mask
@@ -118,17 +104,6 @@ class DataLoader(BaseDataLoader):
                     all_st = [st]
                     all_ed = [ed]
                 else:
-                    # if auto_encoding:
-                    #     all_string = []
-                    #     all_st = []
-                    #     all_ed = []
-                    #     for i in range(encoding_num):
-                    #         all_n_gram, st, ed = get_ngram(tks[str_idx])
-                    #         string = [x2i_map[ngram] for ngram in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + all_n_gram]
-                    #         all_string.append(string)
-                    #         all_st.append(st)
-                    #         all_ed.append(ed)
-                    # else:
                     all_string = []
                     all_st = []
                     all_ed = []
@@ -143,13 +118,6 @@ class DataLoader(BaseDataLoader):
                     for ss in s:
                         freq_map[ss] += 1
 
-                # self.max_position = max(self.max_position, max([y for x in all_ed for y in x]))
-
-                # if self.position_embedding:
-                #     all_info = [all_string, all_st, all_ed]
-                #     for x, y, z in zip(all_string, all_st, all_ed):
-                #         assert len(x) == len(y) and len(y) == len(z)
-                # else:
                 all_info = [all_string]
                 yield (all_info, tks[id_idx])
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
@@ -181,56 +149,14 @@ class Charagram(Encoder):
         self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
         torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
 
-
-        # if position_embedding:
-        #     self.src_st_lookup = nn.Embedding(max_position, embed_size)
-        #     self.src_ed_lookup = nn.Embedding(max_position, embed_size)
-        #     self.trg_st_lookup = nn.Embedding(max_position, embed_size)
-        #     self.trg_ed_lookup = nn.Embedding(max_position, embed_size)
-        #     if sin_embedding:
-        #         # Compute the positional encodings once in log space.
-        #         pe = torch.zeros(max_position, embed_size)
-        #         position = torch.arange(0, max_position).unsqueeze(1).float().to(device)
-        #         div_term = torch.arange(0, embed_size, 2) * -(math.log(10000.0) / embed_size)
-        #         div_term = div_term.to(device).float()
-        #         div_term = torch.exp(div_term)
-        #         pe[:, 0::2] = torch.sin(position * div_term)
-        #         pe[:, 1::2] = torch.cos(position * div_term)
-        #         self.assign_weight(self.src_st_lookup, pe)
-        #         self.assign_weight(self.src_ed_lookup, pe)
-        #         self.assign_weight(self.trg_st_lookup, pe)
-        #         self.assign_weight(self.trg_ed_lookup, pe)
-        #     else:
-        #         torch.nn.init.xavier_uniform_(self.src_st_lookup.weight, gain=1)
-        #         torch.nn.init.xavier_uniform_(self.src_ed_lookup.weight, gain=1)
-        #         torch.nn.init.xavier_uniform_(self.trg_st_lookup.weight, gain=1)
-        #         torch.nn.init.xavier_uniform_(self.trg_ed_lookup.weight, gain=1)
-
         self.bias_src = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
         self.bias_trg = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
         torch.nn.init.constant_(self.bias_src, 0.0)
         torch.nn.init.constant_(self.bias_trg, 0.0)
 
         if use_mid:
-            # if share_vocab:
-            #     self.mid_lookup = self.src_lookup
-            #     self.bias_mid = self.bias_src
-            #     # if self.position_embedding:
-            #     #     self.mid_st_lookup = self.src_st_lookup
-            #     #     self.mid_ed_lookup = self.src_ed_lookup
-            # else:
             self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
             torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
-            # if self.position_embedding:
-            #     self.mid_st_lookup = nn.Embedding(max_position, embed_size)
-            #     self.mid_ed_lookup = nn.Embedding(max_position, embed_size)
-            #     if sin_embedding:
-            #         self.assign_weight(self.mid_st_lookup, pe)
-            #         self.assign_weight(self.mid_ed_lookup, pe)
-            #     else:
-            #         torch.nn.init.xavier_uniform_(self.mid_st_lookup.weight, gain=1)
-            #         torch.nn.init.xavier_uniform_(self.mid_ed_lookup.weight, gain=1)
-
             self.bias_mid = nn.Parameter(torch.zeros(1, embed_size), requires_grad=True)
             torch.nn.init.xavier_uniform_(self.bias_mid, gain=1)
 
@@ -241,7 +167,7 @@ class Charagram(Encoder):
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
-    def calc_encode(self, batch: Batch, is_src, is_mega=False, is_mid=False):
+    def calc_encode(self, batch: Batch, is_src, is_mid=False):
         # input: [len, batch] or [len, batch, pp_vec_size]
         # embed: [len, batch, embed_size]
 
@@ -249,41 +175,16 @@ class Charagram(Encoder):
             lookup = self.mid_lookup
             bias = self.bias_mid
             input, mask = batch.get_mid()
-            # if self.position_embedding:
-            #     st_lookup = self.mid_st_lookup
-            #     ed_lookup = self.mid_ed_lookup
         else:
             if is_src:
                 lookup = self.src_lookup
                 bias = self.bias_src
                 input, mask = batch.get_src()
-                # if self.position_embedding:
-                #     st_lookup = self.src_st_lookup
-                #     ed_lookup = self.src_ed_lookup
             else:
                 lookup = self.trg_lookup
-                # if self.position_embedding:
-                #     st_lookup = self.trg_st_lookup
-                #     ed_lookup = self.trg_ed_lookup
-                # if is_mega:
-                #     bias = self.bias_trg
-                #     input, mask = batch.get_mega()
-                # else:
                 bias = self.bias_trg
                 input, mask = batch.get_trg()
 
-        # # will contain 3 part
-        # if self.position_embedding:
-        #     # word_input, st_input, ed_input = torch.unbind(input, dim=-1)
-        #     # word_embed = lookup(input[:, :, -3])
-        #     # st_embed = st_lookup(input[:, :, -2])
-        #     # ed_embed = ed_lookup(input[:, :, -1])
-        #     # embed = word_embed + self.st_weight * st_embed + self.ed_weight * ed_embed
-        #     embed = lookup(input[:, :, 0]) * torch.sigmoid(st_lookup(input[:, :, 1])) * torch.sigmoid(ed_lookup(input[:, :, 2]))
-        #     embed = embed.masked_fill(mask==0, 0)
-        #     encoded = self.activate(torch.sum(embed, dim=1, keepdim=False) + bias)
-        #
-        # else:
         # [batch_size, max_len, embed_size]
         embed = lookup(input)
         # mask padding

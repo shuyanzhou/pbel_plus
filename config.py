@@ -1,7 +1,7 @@
 import argparse
 import os
 import copy
-
+import pprint
 def str2bool(s):
     if s == "0":
         return False
@@ -106,7 +106,5 @@ def argps():
     args.result_file["pivot_str"] = args.pivot_result + ".str"
 
     # print config
-    for k, v in vars(args).items():
-        if v:
-            print(str(k) + ":", v)
+    pprint.pprint(vars(args))
     return args

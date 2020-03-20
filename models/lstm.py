@@ -1,18 +1,15 @@
-import sys
-sys.path.append("/home/shuyanzh/workshop/cmu_lorelei_edl/")
-from collections import defaultdict
 import functools
 import torch
 from torch import nn
-from torch import optim
 import random
-import numpy as np
 from  torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import pickle
-from models.base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
+from models.base_train import run, init_train
+from models.base_encoder import Encoder, create_optimizer
+from data_loader.data_loader import BaseBatch, BaseDataLoader
 from models.base_test import init_test, eval_dataset, reset_unk_weight
 from utils.similarity_calculator import Similarity
-from utils.constant import  RANDOM_SEED, DEVICE, PP_VEC_SIZE
+from utils.constant import DEVICE, RANDOM_SEED
+import numpy as np
 
 random_seed = RANDOM_SEED
 torch.manual_seed(random_seed)
@@ -36,14 +33,6 @@ class Batch(BaseBatch):
         self.trg_kb_ids = trg_kb_ids
         self.trg_flag = True
 
-    def set_mega(self, mega_tensor, mega_lens, mega_perm_idx, mega_trg_kb_ids):
-        self.mega_tensor = mega_tensor
-        self.mega_lens = mega_lens
-        self.mega_perm_idx = mega_perm_idx
-        self.mega_trg_kb_ids = mega_trg_kb_ids
-        self.mega_flag = True
-        self.negative_num = 1
-
     def set_mid(self, mid_tensor, mid_lens, mid_perm_idx, mid_kb_ids):
         self.mid_tensor = mid_tensor
         self.mid_lens = mid_lens
@@ -60,10 +49,6 @@ class Batch(BaseBatch):
             self.trg_tensor = self.trg_tensor.to(device)
             self.trg_lens = self.trg_lens.to(device)
             self.trg_perm_idx = self.trg_perm_idx.to(device)
-        if self.mega_flag:
-            self.mega_tensor = self.mega_tensor.to(device)
-            self.mega_lens = self.mega_lens.to(device)
-            self.mega_perm_idx = self.mega_perm_idx.to(device)
         if self.mid_flag:
             self.mid_tensor = self.mid_tensor.to(device)
             self.mid_lens = self.mid_lens.to(device)
@@ -81,27 +66,17 @@ class Batch(BaseBatch):
     def get_mid(self):
         return self.mid_tensor, self.mid_lens, self.mid_perm_idx
 
-    def get_mega(self):
-        return self.mega_tensor, self.mega_lens, self.mega_perm_idx
 
 
 
 class DataLoader(BaseDataLoader):
-    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                 train_file, dev_file, test_file,
-                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file,
-                 n_gram_threshold, position_embedding):
-        super(DataLoader,self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab, "<UNK>",
-                                        train_file, dev_file, test_file,
-                                        trg_encoding_num, mid_encoding_num,
-                                        trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold,
-                                        position_embedding)
-        self.position_embedding = False
+    def __init__(self, is_train, args, train_file, dev_file, test_file):
+        super(DataLoader,self).__init__(is_train=is_train, args=args, train_file=train_file, dev_file=dev_file, test_file=test_file)
 
     def new_batch(self):
         return Batch()
 
-    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx, auto_encoding):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
@@ -112,19 +87,12 @@ class DataLoader(BaseDataLoader):
                     string = [x2i_map[char] for char in tks[str_idx]]
                     all_string = [string]
                 else:
-                    # multi version
-                    if auto_encoding:
-                        all_string = []
-                        for i in range(encoding_num):
-                            string = [x2i_map[char] for char in ["<" + tks[type_idx] + ">"] +  ["<" + str(i) + ">"] + list(tks[str_idx])]
-                            # string = [x2i_map[char] for char in list(tks[str_idx])]
-                            all_string.append(string)
-                    else: # wikidata alias, only for KB
-                        all_string = []
-                        alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
-                        for i in range(encoding_num):
-                            string = [x2i_map[char] for char in alias[i]]
-                            all_string.append(string)
+                    all_string = []
+                    alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
+                    for i in range(encoding_num):
+                        string = [x2i_map[char] for char in alias[i]]
+                        all_string.append(string)
+
                 for s in all_string:
                     for ss in s:
                         freq_map[ss] += 1
@@ -150,8 +118,8 @@ class DataLoader(BaseDataLoader):
 
 
 class LSTMEncoder(Encoder):
-    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure:Similarity,
-                 use_mid, share_vocab, mid_vocab_size=0):
+    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, similarity_measure:Similarity,
+                 use_mid, use_avg, mid_vocab_size=0):
         super(LSTMEncoder, self).__init__(hidden_size)
         self.name = "bilstm"
         self.src_vocab_size = src_vocab_size
@@ -159,19 +127,11 @@ class LSTMEncoder(Encoder):
         self.embed_size = embed_size
         self.hidden_size = hidden_size
         self.use_mid = use_mid
-        self.share_vocab = share_vocab
         self.mid_vocab_size=mid_vocab_size
-        if not use_panphon:
-            self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
-            self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
-            torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
-            torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
-            self.use_panphon = False
-        else: # panphon embeddings
-            self.pp_linear = nn.Linear(PP_VEC_SIZE, embed_size)
-            self.use_panphon = True
-            self.src_lookup = None
-            self.trg_lookup = None
+        self.src_lookup = nn.Embedding(src_vocab_size, embed_size)
+        self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size)
+        torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
+        torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
 
         self.src_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
         self.trg_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
@@ -180,15 +140,12 @@ class LSTMEncoder(Encoder):
         self.reset_lstm_parameters(self.trg_lstm)
 
         if use_mid:
-            if share_vocab:
-                self.mid_lookup = self.src_lookup
-                self.mid_lstm = self.src_lstm
-            else:
-                self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
-                self.mid_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
-                torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
+            self.mid_lookup = nn.Embedding(mid_vocab_size, embed_size)
+            self.mid_lstm = nn.LSTM(embed_size, int(hidden_size / 2), bidirectional=True)
+            torch.nn.init.xavier_uniform_(self.mid_lookup.weight, gain=1)
 
         self.similarity_measure = similarity_measure
+        self.use_avg = use_avg
 
     def reset_lstm_parameters(self, lstm):
         for name, param in lstm.state_dict().items():
@@ -201,14 +158,10 @@ class LSTMEncoder(Encoder):
                     param.copy_(p)
                 else:
                     nn.init.constant_(param, 0.0)
-                # p = torch.zeros_like(param)
-                # # set two forget gate bias to 0.5
-                # p[512:1024] = 0.5
-                # param.copy_(p)
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
-    def calc_encode(self, batch, is_src, is_mega=False, is_mid=False):
+    def calc_encode(self, batch, is_src, is_mid=False):
         # input: [len, batch] or [len, batch, pp_vec_size]
         # embed: [len, batch, embed_size]
         if is_mid:
@@ -223,41 +176,43 @@ class LSTMEncoder(Encoder):
             else:
                 lookup = self.trg_lookup
                 lstm = self.trg_lstm
-                if is_mega:
-                    input, input_lens, perm_idx = batch.get_mega()
-                else:
-                    input, input_lens, perm_idx = batch.get_trg()
+                input, input_lens, perm_idx = batch.get_trg()
 
-        if not self.use_panphon:
-            embeds = lookup(input)
-        # no need to lookup, re weight panphon features
-        else:
-            #[len, batch, pp_vec_size] -> [len, batch, embed_size]
-            embeds = self.pp_linear(input)
+
+        embeds = lookup(input)
         packed = pack_padded_sequence(embeds, input_lens, batch_first=False)
         packed_output, (hidden, cached) = lstm(packed)
-        # get the last hidden state
-        # [2, batch, hidden]
-        encoded = hidden
-        # [batch, 2, hidden]
-        encoded = torch.transpose(encoded, 0, 1).contiguous()
-        # combine hidden state of two directions
-        # [batch, hidden * 2]
-        bi_encoded = encoded.view(-1, self.hidden_size)
-        reorder_encoded = bi_encoded[torch.sort(perm_idx, 0)[1]]
+        if not self.use_avg:
+            # get the last hidden state
+            # [2, batch, hidden]
+            encoded = hidden
+            # [batch, 2, hidden]
+            encoded = torch.transpose(encoded, 0, 1).contiguous()
+            # combine hidden state of two directions
+            # [batch, hidden * 2]
+            bi_encoded = encoded.view(-1, self.hidden_size)
+            reorder_encoded = bi_encoded[torch.sort(perm_idx, 0)[1]]
+        else:
+            output, _ = pad_packed_sequence(packed_output)
+
+            # [batch, len, 2 * hidden]
+            encoded = torch.transpose(output, 0, 1)
+            # [batch, 2 * hidden]
+            avg_encoded = torch.sum(encoded, dim=1) / input_lens.unsqueeze(-1).float()
+            reorder_encoded = avg_encoded[torch.sort(perm_idx, 0)[1]]
 
         return reorder_encoded
 
 class AvgLSTMEncoder(LSTMEncoder):
-    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure:Similarity,
-                 use_mid, share_vocab, mid_vocab_size=0):
-        super(AvgLSTMEncoder, self).__init__(src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure,
-                 use_mid, share_vocab, mid_vocab_size)
+    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, similarity_measure:Similarity,
+                 use_mid, mid_vocab_size=0):
+        super(AvgLSTMEncoder, self).__init__(src_vocab_size, trg_vocab_size, embed_size, hidden_size, similarity_measure,
+                 use_mid, mid_vocab_size)
 
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
-    def calc_encode(self, batch, is_src, is_mega=False, is_mid=False):
+    def calc_encode(self, batch, is_src, is_mid=False):
         # input: [len, batch] or [len, batch, pp_vec_size]
         # embed: [len, batch, embed_size]
         if is_mid:
@@ -272,17 +227,9 @@ class AvgLSTMEncoder(LSTMEncoder):
             else:
                 lookup = self.trg_lookup
                 lstm = self.trg_lstm
-                if is_mega:
-                    input, input_lens, perm_idx = batch.get_mega()
-                else:
-                    input, input_lens, perm_idx = batch.get_trg()
+                input, input_lens, perm_idx = batch.get_trg()
 
-        if not self.use_panphon:
-            embeds = lookup(input)
-        # no need to lookup, re weight panphon features
-        else:
-            #[len, batch, pp_vec_size] -> [len, batch, embed_size]
-            embeds = self.pp_linear(input)
+        embeds = lookup(input)
         packed = pack_padded_sequence(embeds, input_lens, batch_first=False)
         packed_output, (hidden, cached) = lstm(packed)
         output, _ = pad_packed_sequence(packed_output)
@@ -309,16 +256,14 @@ def save_model(model:LSTMEncoder, epoch, loss, optimizer, model_path):
     print("[INFO] save model!")
 
 def main(args):
-    if args.model == "lstm":
-        encoder = LSTMEncoder
-    else:
-        encoder = AvgLSTMEncoder
+    use_avg = "avg" in args.model
+
     if args.is_train:
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
-        model = encoder(data_loader.src_vocab_size, data_loader.trg_vocab_size,
-                    args.embed_size, args.hidden_size, args.use_panphon,
+        model = LSTMEncoder(data_loader.src_vocab_size, data_loader.trg_vocab_size,
+                    args.embed_size, args.hidden_size,
                     similarity_measure,
-                    args.use_mid, args.share_vocab, data_loader.mid_vocab_size)
+                    args.use_mid, use_avg, data_loader.mid_vocab_size)
         optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model, args.lr_decay)
         if args.resume:
             model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
@@ -332,12 +277,10 @@ def main(args):
         base_data_loader, intermedia_stuff = init_test(args, DataLoader)
         model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
         similarity_measure = Similarity(args.similarity_measure)
-        model = encoder(model_info["src_vocab_size"], model_info["trg_vocab_size"],
+        model = LSTMEncoder(model_info["src_vocab_size"], model_info["trg_vocab_size"],
                         args.embed_size, args.hidden_size,
-                        use_panphon=args.use_panphon,
                         similarity_measure=similarity_measure,
-                        use_mid=args.use_mid,
-                        share_vocab=args.share_vocab,
+                        use_mid=args.use_mid, use_avg=use_avg,
                         mid_vocab_size=model_info.get("mid_vocab_size", 0))
 
         model.load_state_dict(model_info["model_state_dict"], strict=False)

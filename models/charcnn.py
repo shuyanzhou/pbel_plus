@@ -1,15 +1,11 @@
-import sys
-
-sys.path.append("/home/shuyanzh/workshop/cmu_lorelei_edl/")
-from collections import defaultdict
 import functools
 import torch
 from torch import nn
-import torch.nn.functional as F
-from torch import optim
 import random
-import math
-from models.base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
+import torch.nn.functional as F
+from models.base_train import run, init_train
+from models.base_encoder import Encoder, create_optimizer
+from data_loader.data_loader import BaseBatch, BaseDataLoader
 from models.base_test import init_test, eval_dataset, reset_unk_weight
 from utils.similarity_calculator import Similarity
 from utils.constant import DEVICE, RANDOM_SEED
@@ -36,13 +32,6 @@ class Batch(BaseBatch):
         self.trg_kb_ids = trg_kb_ids
         self.trg_flag = True
 
-    def set_mega(self, mega_tensor, mega_mask, mega_trg_kb_ids):
-        self.mega_tensor = mega_tensor.long()
-        self.mega_mask = mega_mask
-        self.mega_trg_kb_ids = mega_trg_kb_ids
-        self.mega_flag = True
-        self.negative_num = 1
-
     def set_mid(self, mid_tensor, mid_mask, mid_kb_ids):
         self.mid_tensor = mid_tensor.long()
         self.mid_mask = mid_mask
@@ -56,9 +45,6 @@ class Batch(BaseBatch):
         if self.trg_flag:
             self.trg_tensor = self.trg_tensor.to(device)
             self.trg_mask = self.trg_mask.to(device)
-        if self.mega_flag:
-            self.mega_tensor = self.mega_tensor.to(device)
-            self.mega_mask = self.mega_mask.to(device)
         if self.mid_flag:
             self.mid_tensor = self.mid_tensor.to(device)
             self.mid_mask = self.mid_mask.to(device)
@@ -73,29 +59,18 @@ class Batch(BaseBatch):
     def get_trg(self):
         return self.trg_tensor, self.trg_mask
 
-    def get_mega(self):
-        return self.mega_tensor, self.mega_mask
-
     def get_mid(self):
         return self.mid_tensor, self.mid_mask
 
 
 class DataLoader(BaseDataLoader):
-    def __init__(self, is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                 train_file, dev_file, test_file,
-                 trg_encoding_num, mid_encoding_num, trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold,
-                 position_embedding):
-        super(DataLoader, self).__init__(is_train, map_file, batch_size, mega_size, use_panphon, use_mid, share_vocab,
-                                         "<UNK>",
-                                         train_file, dev_file, test_file,
-                                         trg_encoding_num, mid_encoding_num,
-                                         trg_auto_encoding, mid_auto_encoding, alia_file, n_gram_threshold,
-                                         position_embedding)
+    def __init__(self, is_train, args, train_file, dev_file, test_file):
+        super(DataLoader, self).__init__(is_train=is_train, args=args, train_file=train_file, dev_file=dev_file, test_file=test_file)
 
     def new_batch(self):
         return Batch()
 
-    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx, auto_encoding):
+    def load_all_data(self, file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx):
         line_tot = 0
         with open(file_name, "r", encoding="utf-8") as fin:
             for line in fin:
@@ -108,34 +83,20 @@ class DataLoader(BaseDataLoader):
                     all_st = [0 for x in range(len(string))]
                     all_ed = [0 for x in range(len(string))]
                 else:
-                    if auto_encoding:
-                        all_string = []
-                        all_st = []
-                        all_ed = []
-                        for i in range(encoding_num):
-                            string = [x2i_map[x] for x in
-                                      ["<" + tks[type_idx] + ">"] + ["<" + str(i) + ">"] + mention_string]
-                            all_string.append(string)
-                    else:
-                        all_string = []
-                        all_st = []
-                        all_ed = []
-                        alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
-                        for i in range(encoding_num):
-                            cur_mention_string = "<" + alias[i] + ">"
-                            string = [x2i_map[x] for x in cur_mention_string]
-                            all_string.append(string)
+                    all_string = []
+                    all_st = []
+                    all_ed = []
+                    alias = self.get_alias(tks, str_idx, id_idx, encoding_num)
+                    for i in range(encoding_num):
+                        cur_mention_string = "<" + alias[i] + ">"
+                        string = [x2i_map[x] for x in cur_mention_string]
+                        all_string.append(string)
 
                 for s in all_string:
                     for ss in s:
                         freq_map[ss] += 1
 
-
-                if self.position_embedding:
-                    raise NotImplementedError
-                else:
-                    all_info = [all_string]
-
+                all_info = [all_string]
                 yield (all_info, tks[id_idx])
 
         print("[INFO] number of lines in {}: {}".format(file_name, str(line_tot)))
@@ -153,20 +114,16 @@ class DataLoader(BaseDataLoader):
 
 class CharCNN(Encoder):
     def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, similarity_measure, use_mid,
-                 share_vocab, position_embedding, max_position, st_weight, ed_weight, sin_embedding, pooling_method, mid_vocab_size=0):
+                 pooling_method, mid_vocab_size=0):
         super(CharCNN, self).__init__(embed_size)
         self.name = "charcnn"
         self.src_vocab_size = src_vocab_size
         self.trg_vocab_size = trg_vocab_size
         self.mid_vocab_size = mid_vocab_size
         self.use_mid = use_mid
-        self.share_vocab = share_vocab
         self.embed_size = embed_size
-        self.position_embedding = position_embedding
         self.max_position = 0
         self.hidden_size = hidden_size
-        self.sin_embedding = sin_embedding
-        self.st_weight, self.ed_weight = st_weight, ed_weight
         self.activate = F.relu
         self.pooling_method = pooling_method
         # parameters
@@ -174,10 +131,6 @@ class CharCNN(Encoder):
         torch.nn.init.xavier_uniform_(self.src_lookup.weight, gain=1)
         self.trg_lookup = nn.Embedding(trg_vocab_size, embed_size, padding_idx=0)
         torch.nn.init.xavier_uniform_(self.trg_lookup.weight, gain=1)
-
-        if position_embedding:
-            raise NotImplementedError
-
 
         if use_mid:
             raise NotImplementedError
@@ -200,7 +153,7 @@ class CharCNN(Encoder):
 
     # calc_batch_similarity will return the similarity of the batch
     # while calc encode only return the encoding result of src or trg of the batch
-    def calc_encode(self, batch: Batch, is_src, is_mega=False, is_mid=False):
+    def calc_encode(self, batch: Batch, is_src, is_mid=False):
         # input: [len, batch] or [len, batch, pp_vec_size]
         # embed: [len, batch, embed_size]
 
@@ -211,60 +164,45 @@ class CharCNN(Encoder):
                 lookup = self.src_lookup
                 conv1d_list = self.src_conv1d_list
                 input, mask = batch.get_src()
-                if self.position_embedding:
-                    raise NotImplementedError
             else:
                 lookup = self.trg_lookup
                 conv1d_list = self.trg_conv1d_list
+                input, mask = batch.get_trg()
 
-                if self.position_embedding:
-                    raise NotImplementedError
-                if is_mega:
-                    raise NotImplementedError
-                else:
-                    input, mask = batch.get_trg()
-
-        # will contain 3 part
-        if self.position_embedding:
-            raise NotImplementedError
-
-        else:
-            # get masks
-            all_masks = []
-            for pd, ws in zip(self.padding, self.window_size):
-                if pd == 0:
-                    cur_mask = mask[:, ws - 1:]
-                    all_masks.append(cur_mask.unsqueeze(1).float())
-                else:
-                    all_masks.append(mask.unsqueeze(1).float())
-
-            # [batch_size, max_len, embed_size]
-            embed = lookup(input)
-            # [batch_size, embed_size, max_len]
-            reshape_embed = torch.transpose(embed, 1, 2)
-            # [batch_size, hidden_size, length - window_size + 1] * len(window_size)
-            conv_result_list = [self.activate(conv1d_layer(reshape_embed)) for conv1d_layer in conv1d_list]
-            # [batch_size, hidden_size]
-            if self.pooling_method == "max":
-                masked_conv_result_list = [(x - (1 - cur_mask) * 1e10) for cur_mask, x in zip(all_masks, conv_result_list)]
-                pooling_list = [F.max_pool1d(conv_result, kernel_size=conv_result.size(2)).squeeze(2) for conv_result in masked_conv_result_list]
-            elif self.pooling_method in ["mean", "sum"]:
-                masked_conv_result_list = [cur_mask * x for cur_mask, x in zip(all_masks, conv_result_list)]
-                raw_pooling_list = [torch.sum(conv_result, dim=-1, keepdim=False) for conv_result in masked_conv_result_list]
-                if self.pooling_method == "mean":
-                    # average, calculate valid length, [batch_size * 1]
-                    valid_length_list = [torch.sum(cur_mask.squeeze(1), dim=-1, keepdim=True) for cur_mask in all_masks]
-                    pooling_list = [pooling / valid_length for pooling, valid_length in zip(raw_pooling_list, valid_length_list)]
-                else:
-                    pooling_list = raw_pooling_list
+        # get masks
+        all_masks = []
+        for pd, ws in zip(self.padding, self.window_size):
+            if pd == 0:
+                cur_mask = mask[:, ws - 1:]
+                all_masks.append(cur_mask.unsqueeze(1).float())
             else:
-                raise NotImplementedError
-            dropout_list = [self.dropout(pooling) for pooling in pooling_list]
-            concat = torch.cat(dropout_list, dim=1)
-            encode = self.linear(concat)
-            # [batch_size, hidden_size, len(window_size)]
-            # concat = torch.stack(dropout_list, dim=2)
-            # encode = torch.sum(concat, dim=-1, keepdim=False)
+                all_masks.append(mask.unsqueeze(1).float())
+
+        # [batch_size, max_len, embed_size]
+        embed = lookup(input)
+        # [batch_size, embed_size, max_len]
+        reshape_embed = torch.transpose(embed, 1, 2)
+        # [batch_size, hidden_size, length - window_size + 1] * len(window_size)
+        conv_result_list = [self.activate(conv1d_layer(reshape_embed)) for conv1d_layer in conv1d_list]
+        # [batch_size, hidden_size]
+        if self.pooling_method == "max":
+            masked_conv_result_list = [(x - (1 - cur_mask) * 1e10) for cur_mask, x in zip(all_masks, conv_result_list)]
+            pooling_list = [F.max_pool1d(conv_result, kernel_size=conv_result.size(2)).squeeze(2) for conv_result in masked_conv_result_list]
+        elif self.pooling_method in ["mean", "sum"]:
+            masked_conv_result_list = [cur_mask * x for cur_mask, x in zip(all_masks, conv_result_list)]
+            raw_pooling_list = [torch.sum(conv_result, dim=-1, keepdim=False) for conv_result in masked_conv_result_list]
+            if self.pooling_method == "mean":
+                # average, calculate valid length, [batch_size * 1]
+                valid_length_list = [torch.sum(cur_mask.squeeze(1), dim=-1, keepdim=True) for cur_mask in all_masks]
+                pooling_list = [pooling / valid_length for pooling, valid_length in zip(raw_pooling_list, valid_length_list)]
+            else:
+                pooling_list = raw_pooling_list
+        else:
+            raise NotImplementedError
+        dropout_list = [self.dropout(pooling) for pooling in pooling_list]
+        concat = torch.cat(dropout_list, dim=1)
+        encode = self.linear(concat)
+        # [batch_size, hidden_size, len(window_size)]
         return encode
 
 
@@ -278,8 +216,6 @@ def save_model(model: CharCNN, epoch, loss, optimizer, model_path):
                 "embed_size": model.embed_size,
                 "hidden_size": model.hidden_size,
                 "similarity_measure": model.similarity_measure.method,
-                "max_position": model.max_position,
-                "sin_embedding": model.sin_embedding,
                 "epoch": epoch,
                 "loss": loss}, model_path)
     print("[INFO] save model!")
@@ -290,17 +226,12 @@ def main(args):
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
         model = CharCNN(data_loader.src_vocab_size, data_loader.trg_vocab_size,
                           args.embed_size, args.hidden_size,
-                          similarity_measure, args.use_mid, args.share_vocab,
-                          position_embedding=args.position_embedding,
-                          max_position=args.max_position,
-                          st_weight=args.st_weight,
-                          ed_weight=args.ed_weight,
-                          sin_embedding=args.sin_embedding,
+                          similarity_measure, args.use_mid,
                           pooling_method=args.pooling_method,
                           mid_vocab_size=data_loader.mid_vocab_size)
         optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model)
 
-        if args.finetune:
+        if args.resume:
             model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
             model.load_state_dict(model["model_state_dict"])
             optimizer.load_state_dict(model["optimizer_state_dict"])
@@ -308,6 +239,7 @@ def main(args):
                 "[INFO] load model from epoch {:d} train loss: {:.4f}".format(model_info["epoch"], model_info["loss"]))
         model.set_similarity_matrix()
         run(data_loader, model, criterion, optimizer, scheduler, similarity_measure, save_model, args)
+
     else:
         base_data_loader, intermedia_stuff = init_test(args, DataLoader)
         model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
@@ -317,12 +249,6 @@ def main(args):
                           model_info["hidden_size"],
                           similarity_measure=similarity_measure,
                           use_mid=args.use_mid,
-                          share_vocab=args.share_vocab,
-                          position_embedding=args.position_embedding,
-                          max_position=args.max_position,
-                          st_weight=args.st_weight,
-                          ed_weight=args.ed_weight,
-                          sin_embedding=model_info.get("sin_embedding", False),
                           pooling_method= model_info["pooling_method"],
                           mid_vocab_size=model_info.get("mid_vocab_size", 0))
         model.load_state_dict(model_info["model_state_dict"])

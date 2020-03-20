@@ -1,3 +1,48 @@
+import sys
+import os
+import functools
+import random
+import numpy as np
+import pickle
+from typing import List
+from collections import defaultdict, Counter
+from utils.constant import DEVICE
+from utils.func import FileInfo
+
+print = functools.partial(print, flush=True)
+device = DEVICE
+
+class BaseBatch:
+    def __init__(self):
+        self.src_flag=False
+        self.trg_flag=False
+        self.mega_flag=False
+        self.mid_flag=False
+        self.negative_num=0
+        self.src_gold_kb_ids = None
+        self.trg_kb_ids = None
+
+    def set_src(self, *args, **kwargs):
+        pass
+    def set_trg(self, *args, **kwargs):
+        pass
+    def set_mega(self, *args, **kwargs):
+        pass
+    def set_mid(self, *args, **kwargs):
+        pass
+    def get_all(self, *args, **kwargs):
+        pass
+    def get_src(self, *args, **kwargs):
+        pass
+    def get_trg(self, *args, **kwargs):
+        pass
+    def get_mega(self, *args, **kwargs):
+        pass
+    def get_mid(self, *args, **kwargs):
+        pass
+    def to(self,  *args, **kwargs):
+        pass
+
 class BaseDataLoader:
     def __init__(self, is_train, args,
                  train_file: FileInfo, dev_file: FileInfo, test_file: FileInfo):
@@ -35,25 +80,10 @@ class BaseDataLoader:
                         filter_idx.append(idx)
                 if len(filter_idx) != 0:
                     filter_string = [cur_version_string[x] for x in filter_idx]
-                    # if self.position_embedding:
-                    #     st_idx = cur_data[0][1][cur_version]
-                    #     ed_idx = cur_data[0][2][cur_version]
-                    #     filter_st = [st_idx[x] for x in filter_idx]
-                    #     filter_ed = [ed_idx[x] for x in filter_idx]
                 else:
                     filter_string = [self.pad_idx]
-                    # if self.position_embedding:
-                    #     filter_st = [0]
-                    #     filter_ed = [0]
 
                 cur_filter_string.append(filter_string)
-                # if self.position_embedding:
-                #     cur_filter_ed.append(filter_ed)
-                #     cur_filter_st.append(filter_st)
-
-            # if self.position_embedding:
-            #     all_info = [cur_filter_string, cur_filter_st, cur_filter_ed]
-            # else:
             all_info = [cur_filter_string]
             filter_data.append([all_info, cur_data[1]])
 
@@ -80,18 +110,13 @@ class BaseDataLoader:
         self.save_map(self.trg_freq_map, self.map_file + "_trg_freq.pkl")
 
         if self.use_mid:
-            # if self.share_vocab:
-            #     self.x2i_mid = self.x2i_src
-            #     self.mid_freq_map = self.src_freq_map
-            # else:
             self.x2i_mid = defaultdict(lambda: len(self.x2i_mid))
             self.x2i_mid[self.pad_str]
             self.mid_freq_map = Counter()
             self.train_mid = list(
                 self.load_data(self.train_file.mid_file_name, self.train_file.mid_str_idx, self.train_file.mid_id_idx,
                                is_src=False, is_mid=True, encoding_num=self.mid_encoding_num,
-                               type_idx=self.train_file.mid_type_idx,
-                               auto_encoding=self.mid_auto_encoding))
+                               type_idx=self.train_file.mid_type_idx))
             self.save_map(self.x2i_mid, self.map_file + "_mid.pkl")
             self.save_map(self.mid_freq_map, self.map_file + "_mid_freq.pkl")
             self.mid_vocab_size = len(self.x2i_mid)
@@ -101,9 +126,6 @@ class BaseDataLoader:
             self.train_mid = None
             self.mid_vocab_size = 0
 
-        # self.non_neg_mask = self.get_non_negative_mask()
-
-        # sort training data by input length
         self.src_vocab_size = len(self.x2i_src)
         self.trg_vocab_size = len(self.x2i_trg)
         self.x2i_src = defaultdict(lambda: self.x2i_src[self.pad_str], self.x2i_src)
@@ -143,20 +165,6 @@ class BaseDataLoader:
                 if self.use_mid:
                     self.dev_mid = self.n_gram_filter(self.dev_mid, self.mid_freq_map)
 
-    # def get_non_negative_mask(self):
-    #     id_idx_map = defaultdict(list)
-    #     for idx, (_, kb_id) in enumerate(self.train_src):
-    #         id_idx_map[kb_id].append(idx)
-    #     mask = torch.zeros((len(self.train_src), len(self.train_src)))
-    #     for _, idx_list in id_idx_map.items():
-    #         idx_pairs = combinations(idx_list, 2)
-    #         for i, j in idx_pairs:
-    #             mask[i, j] = 1
-    #             mask[j, i] = 1
-    #     mask += torch.eye(len(self.train_src), len(self.train_src))
-    #     mask = mask.long()
-    #     # mask = mask.to(device)
-    #     return mask
 
     def init_test(self):
         self.x2i_src = self.load_map(self.map_file + "_src.pkl")
@@ -192,11 +200,11 @@ class BaseDataLoader:
 
         if self.n_gram_threshold != 0:
             if self.test_file.src_file_name is not None:
-                self.test_src = self.n_gram_filter(self.test_src, self.src_freq_map, True)
+                self.test_src = self.n_gram_filter(self.test_src, self.src_freq_map)
             if self.test_file.trg_file_name is not None:
-                self.test_trg = self.n_gram_filter(self.test_trg, self.trg_freq_map, True)
+                self.test_trg = self.n_gram_filter(self.test_trg, self.trg_freq_map)
             if self.test_file.mid_file_name is not None:
-                self.test_mid = self.n_gram_filter(self.test_mid, self.mid_freq_map, True)
+                self.test_mid = self.n_gram_filter(self.test_mid, self.mid_freq_map)
 
     def load_alia_map(self, fname):
         if fname != "HOLDER":
@@ -234,7 +242,7 @@ class BaseDataLoader:
         return alias
 
     def load_all_data(self, file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx):
-        pass
+        raise NotImplementedError
 
     def load_data(self, file_name, str_idx, id_idx, is_src, encoding_num, type_idx, is_mid=False):
         if is_src:
@@ -249,10 +257,10 @@ class BaseDataLoader:
         return self.load_all_data(file_name, str_idx, id_idx, x2i_map, freq_map, encoding_num, type_idx)
 
     def transform_one_batch(self, *args, **kwargs) -> list:
-        pass
+        raise NotImplementedError
 
     def new_batch(self) -> BaseBatch:
-        pass
+        raise NotImplementedError
 
     def extract_idx(self, encoding_num, idx_list):
         all_idx = []
@@ -269,16 +277,6 @@ class BaseDataLoader:
         # expand words to list
         all_words = self.extract_idx(encoding_num, words)
         word_idx_tensor, *other_info = self.transform_one_batch(all_words)
-
-        # if self.position_embedding:
-        #     st = [side_data[idx][0][1] for idx in data_idx]
-        #     all_st = self.extract_idx(encoding_num, st)
-        #     ed = [side_data[idx][0][2] for idx in data_idx]
-        #     all_ed = self.extract_idx(encoding_num, ed)
-        #     st_idx_tensor = self.transform_one_batch(all_st)[0]
-        #     ed_idx_tensor = self.transform_one_batch(all_ed)[0]
-        #     merge_tensor = torch.stack((word_idx_tensor, st_idx_tensor, ed_idx_tensor), dim=-1)
-        # else:
         merge_tensor = word_idx_tensor
 
         kb_ids = [side_data[idx][1] for idx in data_idx]
@@ -286,7 +284,7 @@ class BaseDataLoader:
 
         return batch_info, kb_ids
 
-    def create_batch(self, dataset, data_src=None, data_trg=None, data_mega=None, data_mid=None) -> List[BaseBatch]:
+    def create_batch(self, dataset, data_src=None, data_trg=None, data_mid=None) -> List[BaseBatch]:
         batches = []
         non_none = [x for x in [data_src, data_trg, data_mid] if x is not None][0]
         data_idx = [i for i in range(len(non_none))]
@@ -302,10 +300,6 @@ class BaseDataLoader:
             if data_trg is not None:
                 batch_info, trg_kb_ids = self.prepare_batch(data_trg, cur_data_idx, encoding_num=self.trg_encoding_num)
                 batch.set_trg(*batch_info, trg_kb_ids)
-            if data_mega is not None:
-                # TODO this needs to be fix with multiple encodings!
-                batch_info, trg_kb_ids = self.prepare_batch(data_mega, cur_data_idx, encoding_num=self.trg_encoding_num)
-                batch.set_mega(*batch_info, trg_kb_ids)
             if data_mid is not None:
                 batch_info, mid_kb_ids = self.prepare_batch(data_mid, cur_data_idx, encoding_num=self.mid_encoding_num)
                 batch.set_mid(*batch_info, mid_kb_ids)
@@ -327,60 +321,15 @@ class BaseDataLoader:
         else:
             assert is_src is not None and is_mid is not None
             if is_mid:
-                batches = self.create_batch(dataset, data_src=None, data_trg=None, data_mega=None,
+                batches = self.create_batch(dataset, data_src=None, data_trg=None,
                                             data_mid=self.test_mid)
             else:
                 if is_src:
-                    batches = self.create_batch(dataset, self.test_src, None, None, None)
+                    batches = self.create_batch(dataset, self.test_src, None, None)
                 else:
-                    batches = self.create_batch(dataset, None, self.test_trg, None, None)
+                    batches = self.create_batch(dataset, None, self.test_trg, None)
 
         return batches
-
-    # def create_megabatch(self, model: Encoder):
-    #     # only for training
-    #     data_src, data_trg = self.train_src, self.train_trg
-    #     data_idx = [i for i in range(len(data_src))]
-    #     random.shuffle(data_idx)
-    #     for i in range(0, len(data_idx), self.mega_batch_size):
-    #         batch = self.new_batch()
-    #         cur_size = min(self.mega_batch_size, len(data_idx) - i)
-    #         cur_data_idx = data_idx[i: i + cur_size]
-    #         # src
-    #         batch_info, src_gold_kb_ids = self.prepare_batch(data_src, cur_data_idx)
-    #         batch.set_src(*batch_info, src_gold_kb_ids)
-    #         # trg
-    #         batch_info, trg_kb_ids = self.prepare_batch(data_trg, cur_data_idx)
-    #         batch.set_trg(*batch_info, trg_kb_ids)
-    #
-    #         with torch.no_grad():
-    #             model.eval()
-    #             batch.to(device)
-    #             M, _ = model.calc_batch_similarity(batch, use_negative=False, use_mid=False, proportion=0,
-    #                                                trg_encoding_num=0, mid_encoding_num=0)
-    #             model.train()
-    #             raise NotImplementedError
-    #
-    #         negative_num = min(1, cur_size - 1)
-    #
-    #         # mask the non negative samples and the diagonal
-    #         idx_tensor = torch.LongTensor(cur_data_idx)
-    #         non_neg_mask = torch.index_select(self.non_neg_mask, 0, idx_tensor)
-    #         non_neg_mask = torch.index_select(non_neg_mask, 1, idx_tensor)
-    #         non_neg_mask = non_neg_mask.to(device)
-    #         masked_M = M.masked_fill(non_neg_mask == 1, -1e9)
-    #
-    #         # negative_idx = [batch_size, 1]
-    #         _, negative_idx = torch.topk(masked_M, k=negative_num, dim=-1)
-    #         # negative sample
-    #         cur_negative_idx = [cur_data_idx[idx.item()] for idx in negative_idx]
-    #         mega_src = [data_src[idx] for idx in cur_data_idx]
-    #         mega_trg = [data_trg[idx] for idx in cur_data_idx]
-    #         mega_negative = [data_trg[idx] for idx in cur_negative_idx]
-    #
-    #         cur_mega_batch = self.create_batch("train", mega_src, mega_trg, mega_negative)
-    #         for b in cur_mega_batch:
-    #             yield b
 
     def save_map(self, map, map_file):
         # save map
