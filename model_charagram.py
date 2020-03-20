@@ -25,7 +25,7 @@ device = DEVICE
 START_SYMBOL = "<s>"
 END_SYMBOL = "</s>"
 
-def get_ngram(string, ngram_list=(2, 3, 4, 5)):
+def get_ngram(string, ngram_list=(2,3,4,5)):
     all_ngrams = []
     all_st_idx = []
     all_ed_idx = []

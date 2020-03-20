@@ -37,7 +37,8 @@ def extract_plang_ngram(plang, encode):
     return pchar
 
 def extract_tlang_ngram(tlang, encode):
-    tchar = defaultdict(float)
+    # tchar = defaultdict(float)
+    tchar = []
     base_path = "/projects/tir2/users/shuyanzh/lorelei_data/pbel/data"
     data_path = os.path.join(base_path, f"me_test_en-{tlang}_links{encode}")
     with open(data_path, "r", encoding="utf-8") as f:
@@ -46,11 +47,12 @@ def extract_tlang_ngram(tlang, encode):
             s = tks[2]
             cur_ngram = get_ngram(s)
             for ngram in cur_ngram:
-                tchar[ngram] += 1
-    tot = sum(list(tchar.values()))
+                # tchar[ngram] += 1
+                tchar.append(ngram)
+    # tot = sum(list(tchar.values()))
     # calculate the probability
-    for k, v in tchar.items():
-        tchar[k] = v / tot
+    # for k, v in tchar.items():
+    #     tchar[k] = v / tot
     return tchar
 
 def calc_n_gram_overlap(pchar, tchar):
@@ -60,18 +62,22 @@ def calc_n_gram_overlap(pchar, tchar):
     for c in tchar:
         if c in pchar:
             # occur += min(pchar[c], tchar[c])
-            occur += tchar[c]
+            # occur += tchar[c]
+            occur += 1
         else:
             unk += 1
+        # tot += 1
     # return (tot - unk) / tot
-    return occur
-
+    # return occur
+    return occur / tot
 all_plangs = ["ti", "ny", "om", "xh", "zu", "tpi", "rw", "mt", "lo", "ha", "ug", "sn", "so",
                   "tk", "ilo", "am", "ckb", "ku", "pa", "yo", "my", "sw", "mr", "jv", "te", "bn",
                   "tl", "ky", "tg", "ta", "uz", "hi", "th", "az", "kk", "ms", "tr", "ro", "hu",
                   "id", "ca", "ar", "uk", "pt", "vi", "pl", "es", "it", "ru", "nl",
                   "fr", "de", "sv", "ceb"]
 all_tlangs = ["lo", "mr", "te", "il5", "il6", "il9", "il10"]
+# all_plangs = ["mr"]
+# all_tlangs = ["mr"]
 
 all_tlang_ngram = []
 all_tlang_ipa_ngram = []
