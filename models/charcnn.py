@@ -9,11 +9,9 @@ import torch.nn.functional as F
 from torch import optim
 import random
 import math
-import panphon as pp
-from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
-from base_test import init_test, eval_dataset, reset_unk_weight
-from config import argps
-from similarity_calculator import Similarity
+from models.base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
+from models.base_test import init_test, eval_dataset, reset_unk_weight
+from utils.similarity_calculator import Similarity
 from utils.constant import DEVICE, RANDOM_SEED
 import numpy as np
 
@@ -287,8 +285,7 @@ def save_model(model: CharCNN, epoch, loss, optimizer, model_path):
     print("[INFO] save model!")
 
 
-if __name__ == "__main__":
-    args = argps()
+def main(args):
     if args.is_train:
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
         model = CharCNN(data_loader.src_vocab_size, data_loader.trg_vocab_size,

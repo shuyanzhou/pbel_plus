@@ -7,13 +7,11 @@ from torch import nn
 from torch import optim
 import random
 import numpy as np
-import panphon as pp
 from  torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import pickle
-from base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
-from base_test import init_test, eval_dataset, reset_unk_weight
-from config import argps
-from similarity_calculator import Similarity
+from models.base_train import FileInfo, BaseBatch, BaseDataLoader, Encoder, init_train, create_optimizer, run
+from models.base_test import init_test, eval_dataset, reset_unk_weight
+from utils.similarity_calculator import Similarity
 from utils.constant import  RANDOM_SEED, DEVICE, PP_VEC_SIZE
 
 random_seed = RANDOM_SEED
@@ -250,6 +248,53 @@ class LSTMEncoder(Encoder):
 
         return reorder_encoded
 
+class AvgLSTMEncoder(LSTMEncoder):
+    def __init__(self, src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure:Similarity,
+                 use_mid, share_vocab, mid_vocab_size=0):
+        super(AvgLSTMEncoder, self).__init__(src_vocab_size, trg_vocab_size, embed_size, hidden_size, use_panphon, similarity_measure,
+                 use_mid, share_vocab, mid_vocab_size)
+
+
+    # calc_batch_similarity will return the similarity of the batch
+    # while calc encode only return the encoding result of src or trg of the batch
+    def calc_encode(self, batch, is_src, is_mega=False, is_mid=False):
+        # input: [len, batch] or [len, batch, pp_vec_size]
+        # embed: [len, batch, embed_size]
+        if is_mid:
+            lookup = self.mid_lookup
+            lstm = self.mid_lstm
+            input, input_lens, perm_idx = batch.get_mid()
+        else:
+            if is_src:
+                lookup = self.src_lookup
+                lstm = self.src_lstm
+                input, input_lens, perm_idx = batch.get_src()
+            else:
+                lookup = self.trg_lookup
+                lstm = self.trg_lstm
+                if is_mega:
+                    input, input_lens, perm_idx = batch.get_mega()
+                else:
+                    input, input_lens, perm_idx = batch.get_trg()
+
+        if not self.use_panphon:
+            embeds = lookup(input)
+        # no need to lookup, re weight panphon features
+        else:
+            #[len, batch, pp_vec_size] -> [len, batch, embed_size]
+            embeds = self.pp_linear(input)
+        packed = pack_padded_sequence(embeds, input_lens, batch_first=False)
+        packed_output, (hidden, cached) = lstm(packed)
+        output, _ = pad_packed_sequence(packed_output)
+
+        # [batch, len, 2 * hidden]
+        encoded = torch.transpose(output, 0, 1)
+        # [batch, 2 * hidden]
+        avg_encoded = torch.sum(encoded, dim=1) / input_lens.unsqueeze(-1).float()
+        reorder_encoded = avg_encoded[torch.sort(perm_idx, 0)[1]]
+
+        return reorder_encoded
+
 def save_model(model:LSTMEncoder, epoch, loss, optimizer, model_path):
     torch.save({"model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
@@ -263,16 +308,19 @@ def save_model(model:LSTMEncoder, epoch, loss, optimizer, model_path):
                 "loss": loss}, model_path)
     print("[INFO] save model!")
 
-if __name__ == "__main__":
-    args = argps()
+def main(args):
+    if args.model == "lstm":
+        encoder = LSTMEncoder
+    else:
+        encoder = AvgLSTMEncoder
     if args.is_train:
         data_loader, criterion, similarity_measure = init_train(args, DataLoader)
-        model = LSTMEncoder(data_loader.src_vocab_size, data_loader.trg_vocab_size,
+        model = encoder(data_loader.src_vocab_size, data_loader.trg_vocab_size,
                     args.embed_size, args.hidden_size, args.use_panphon,
                     similarity_measure,
                     args.use_mid, args.share_vocab, data_loader.mid_vocab_size)
         optimizer, scheduler = create_optimizer(args.trainer, args.learning_rate, model, args.lr_decay)
-        if args.finetune:
+        if args.resume:
             model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
             model.load_state_dict(model_info["model_state_dict"])
             optimizer.load_state_dict(model_info["optimizer_state_dict"])
@@ -284,7 +332,7 @@ if __name__ == "__main__":
         base_data_loader, intermedia_stuff = init_test(args, DataLoader)
         model_info = torch.load(args.model_path + "_" + str(args.test_epoch) + ".tar")
         similarity_measure = Similarity(args.similarity_measure)
-        model = LSTMEncoder(model_info["src_vocab_size"], model_info["trg_vocab_size"],
+        model = encoder(model_info["src_vocab_size"], model_info["trg_vocab_size"],
                         args.embed_size, args.hidden_size,
                         use_panphon=args.use_panphon,
                         similarity_measure=similarity_measure,

@@ -10,9 +10,10 @@ def str2bool(s):
 
 def argps():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model", help='model to use for encoding strings',
+                        choices=('charagram', 'charcnn', 'lstm', 'avg_lstm'),
+                        type=str, default='charagram')
     parser.add_argument("--is_train", type=str2bool, default=False)
-    parser.add_argument("--mega", help="whether to use mega batch to find negative samples",
-                        type=str2bool, default=False)
     parser.add_argument("--use_mid", help="whether to use entity in that language",
                         type=str2bool, default=False)
 
@@ -23,25 +24,13 @@ def argps():
     parser.add_argument("--mid_type_idx", type=int, default=3)
     parser.add_argument("--kb_type_idx", type=int, default=2)
     parser.add_argument("--pivot_type_idx", type=int, default=3)
-    parser.add_argument("--trg_auto_encoding", type=str2bool, default=False)
-    parser.add_argument("--mid_auto_encoding", type=str2bool, default=False)
     parser.add_argument("--alia_file", type=str, default="HOLDER")
-    # mega batch
-    parser.add_argument("--mega_size", type=int, default=40)
     parser.add_argument("--method", default="base")
 
     # filter
     parser.add_argument("--n_gram_threshold", help="ignore n gram with less than the min frequency", type=int, default=0)
 
-    # position embedding
-    parser.add_argument("--position_embedding", help="whether to use position embedding", type=str2bool, default=0)
-    parser.add_argument("--max_position", type=int, default=5000)
-    parser.add_argument("--st_weight", type=float, default=0.1)
-    parser.add_argument("--ed_weight", type=float, default=0)
-    parser.add_argument("--sin_embedding", help="whether to use sinusoids embedding", type=str2bool, default=1)
     # middle stuff
-    parser.add_argument("--share_vocab", help="whether to share src and middle vocab and encoding model",
-                        type=str2bool, default=False)
     parser.add_argument("--train_mid_file", default="")
     parser.add_argument("--dev_mid_file", default="")
     parser.add_argument("--mid_str_idx", help="HRL entity string", type=int, default=1)
@@ -55,11 +44,10 @@ def argps():
     parser.add_argument("--dev_file", default="")
     parser.add_argument("--map_file", default="")
     parser.add_argument("--model_path", default="")
-    parser.add_argument("--finetune", type=str2bool, default=False)
+    parser.add_argument("--resume", type=str2bool, default=False)
     parser.add_argument("--src_idx", help="LRL or HRL mention string", type=int, default=2)
     parser.add_argument("--trg_idx", help="KB entity string index", type=int, default=1)
     parser.add_argument("--trg_id_idx", help="KB id index", type=int, default=0)
-    parser.add_argument("--use_panphon", type=str2bool, default=False)
     parser.add_argument("--val_topk", type=int, default=30)
 
     # training details

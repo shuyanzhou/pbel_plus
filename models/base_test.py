@@ -3,11 +3,10 @@ import functools
 import torch
 import random
 import sys
-sys.path.append("/home/shuyanzh/workshop/cmu_lorelei_edl/")
 import numpy as np
 import time
-from base_train import BaseDataLoader, Encoder, FileInfo, list2nparr, append_multiple_encodings, merge_encodings
-from similarity_calculator import Similarity
+from models.base_train import BaseDataLoader, Encoder, FileInfo, list2nparr, append_multiple_encodings, merge_encodings
+from utils.similarity_calculator import Similarity
 from typing import List
 from utils.constant import RANDOM_SEED, PP_VEC_SIZE, DEVICE
 
@@ -234,12 +233,7 @@ def init_test(args, DataLoader):
     test_file = FileInfo()
     test_file.set_src(args.test_file, args.test_str_idx, args.test_id_idx)
     test_file.set_trg(args.kb_file, args.kb_str_idx, args.kb_id_idx, args.kb_type_idx)
-    base_data_loader = DataLoader(False, args.map_file, args.batch_size, args.mega_size,
-                                  args.use_panphon, args.use_mid, args.share_vocab, train_file=None, dev_file=None, test_file=test_file,
-                                  trg_encoding_num=args.trg_encoding_num, mid_encoding_num=args.mid_encoding_num,
-                                  trg_auto_encoding=args.trg_auto_encoding, mid_auto_encoding=args.mid_auto_encoding,
-                                  alia_file=args.alia_file, n_gram_threshold=args.n_gram_threshold,
-                                  position_embedding=args.position_embedding)
+    base_data_loader = DataLoader(is_train=False, args=args, train_file=None, dev_file=None, test_file=test_file)
     intermediate_stuff = []
     if args.method != "base":
         for stuff in args.intermediate_stuff:
@@ -252,16 +246,7 @@ def init_test(args, DataLoader):
                     inter_file.set_src(file_name, str_idx, id_idx)
                 else:
                     inter_file.set_trg(file_name, str_idx, id_idx, type_idx)
-            inter_data_loader = DataLoader(False, args.map_file, args.batch_size, args.mega_size,
-                                           args.use_panphon, args.use_mid, args.share_vocab, train_file=None, dev_file=None, test_file=inter_file,
-                                           trg_encoding_num=args.trg_encoding_num,
-                                           mid_encoding_num=args.mid_encoding_num,
-                                           trg_auto_encoding=args.trg_auto_encoding,
-                                           mid_auto_encoding=args.mid_auto_encoding,
-                                           alia_file=args.alia_file,
-                                           n_gram_threshold=args.n_gram_threshold,
-                                           position_embedding=args.position_embedding
-                                           )
+            inter_data_loader = DataLoader(is_train=False, args=args, train_file=None, dev_file=None, test_file=inter_file)
             intermediate_stuff.append((name, inter_data_loader, encoded_file, load_encoded, is_src, is_mid))
 
     return base_data_loader, intermediate_stuff
