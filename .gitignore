@@ -7,6 +7,6 @@
 *.tmp
 log/
 __pycache__/
-data/
+debug_data/
 .idea/
 *.pyc
