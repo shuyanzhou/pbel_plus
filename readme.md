@@ -1,60 +1,41 @@
-# PBEL+ Running
+# Improving Candidate Generation for Low-resource Cross-lingual Entity Linking
+
+This is the code repo for TACL 2020 paper [Improving Candidate Generation for Low-resource Cross-lingual Entity Linking](https://arxiv.org/abs/2003.01343)
 
 ## Training
-### Generate training data
-To generate the training data, we need 
-* download Wikipedia data from the Wikipedia dump
-* extract bilingual entity map
-* extract bilingual mention entity map
-* convert to IPA if necessary
-* convert to my model running format
-
-An training data example is in:
-> /projects/tir2/users/shuyanzh/lorelei_data/pbel/data/ee_test_en-ti_links{.ipa}
-
-The code for this pipeline is here:
-> /home/shuyanzh/workshop/lor_edl/train_pbel.sh
-
-It has comment for each step, might be a little bit messy
-
-### Run PBEL training 
-```bash
-final_train_file=""
-suffix="" # ipa or leave blank
-final_dev_file=""
-save_path="" # the folder you will use to store data, it will contains the map and the model
-lang="" # I often use two character code for the language
-file_line="" # "_ipa" or "_graph"
-python /home/shuyanzh/workshop/pbel/model_charagram.py \
-                --is_train 1\
-                --mega 0\
-                --use_mid 0\
-                --share_vocab 0\
-                --trg_encoding_num 1\
-                --trg_auto_encoding 0\
-                --position_embedding 0\
-                --sin_embedding 0 \
-                --embed_size 300 \
-                --n_gram_threshold 0 \
-                --train_file $final_train_file${suffix}\
-                --dev_file $final_dev_file${suffix}\
-                --map_file "${save_path}/c2i_maps/${lang}-char-cosine-hinge${file_line}"\
-                --model_path "${save_path}/models/${lang}-char-cosine-hinge${file_line}" \
-                --similarity_measure "cosine" \
-                --objective "hinge"\
-                --learning_rate 0.1 \
-                --trainer "sgd"
-
-```
+Please refer to train.sh for the arguments, all four models (charagram, charcnn, lstm-last and lstm-avg) could be launched in this bash file
 
 ## Test
-* After you get the ner file, you could use 
-> /home/shuyanzh/workshop/pbel/preprocessing/run_st.sh
+Please refer to test.sh for the arguments, all four models (charagram, charcnn, lstm-last and lstm-avg) could be launched in this bash file
 
-The argument is the number of IL, e.g. 5, 6, 9, 10. This code will generate PBEL style test data. 
+## Data
+Data folder contains ``data`` ``alias`` and ``kb``
+#### ``data``: all train, val, test data
+```
+English_Wikipedia_ID ||| English_Wikipedia_title ||| Wikipedia_title_of_train/test_lang ||| Entity_type
+e.g. 3378263 ||| John Michael Talbot ||| ጆን ማይክል ታልበት ||| PER
+```
+#### ``alias``: entity alias from Wikidata
+```
+Wikidata_ID ||| English_Wikipedia_ID ||| aliases
+e.g. Q42 ||| 8091 ||| Douglas Adams ||| Douglas N. Adams || Douglas Noël Adams || Douglas Noel Adams
+```
 
-* After getting the pbel style test data, you could run the model, an example script is here:
-> /home/shuyanzh/workshop/pbel/sh_script/test_st9-tl_ipa.sh
+#### ``kb``: all entities in wikipedia (~2M, proper nouns)
+```
+English_Wikipedia_ID ||| English_Wikipedia_title ||| Entity_type
+e.g. 16429160 ||| George Karrys ||| PER
+```
+Note that all files ended with .ipa are of *phoneme* representations, using [Epitran](https://github.com/dmort27/epitran)
+## Reference
+```
+@article{zhou20tacl,
+    title = {Improving Candidate Generation for Low-resource Cross-lingual Entity Linking},
+    author = {Shuyan Zhou and Shruti Rijhwani and John Wieting and Jaime Carbonell and Graham Neubig},
+    journal = {Transactions of the Association of Computational Linguistics},
+    month = {},
+    url = {https://arxiv.org/abs/2003.01343},
+    year = {2020}
+}
 
-If the test data is too large, it will throw OOM error, so I split the data to 3000 lines per file. In the test script, L49-L50 will iterate all files
-
+```
