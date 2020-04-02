@@ -32,9 +32,13 @@ Note that all files ended with .ipa are of *phoneme* representations, using [Epi
 under the models folder, we have:
 
 ``base_train``: the base class for training 
+
 ``base_test``: the base class for testing
+
 ``charagram``: character n-gram model, used in our work
+
 ``charcnn``: character CNN, used as baseline
+
 ``lstm``: used as baseline
 
 ## Reference
