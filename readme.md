@@ -10,7 +10,7 @@ Please refer to test.sh for the arguments, all four models (charagram, charcnn, 
 
 ## Data
 Data folder contains ``data`` ``alias`` and ``kb``
-#### ``data``: all train, val, test data
+#### ``data``: data for train, dev and test
 ```
 English_Wikipedia_ID ||| English_Wikipedia_title ||| Wikipedia_title_of_train/test_lang ||| Entity_type
 e.g. 3378263 ||| John Michael Talbot ||| ጆን ማይክል ታልበት ||| PER
@@ -27,6 +27,16 @@ English_Wikipedia_ID ||| English_Wikipedia_title ||| Entity_type
 e.g. 16429160 ||| George Karrys ||| PER
 ```
 Note that all files ended with .ipa are of *phoneme* representations, using [Epitran](https://github.com/dmort27/epitran)
+
+## Model
+under the models folder, we have:
+
+``base_train``: the base class for training 
+``base_test``: the base class for testing
+``charagram``: character n-gram model, used in our work
+``charcnn``: character CNN, used as baseline
+``lstm``: used as baseline
+
 ## Reference
 ```
 @article{zhou20tacl,
