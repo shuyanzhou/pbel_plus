@@ -1,6 +1,6 @@
 DATA=./data
 TRAIN_LANG="" # pivoting language
-FORM="" # .ipa or blank
+FORM="" # .ipa if using phoneme and leave it blank if using grapheme
 ALIAS_FILE=${DATA}/alias/${ALIAS_FILE}${FORM}
 
 # charagram
