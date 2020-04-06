@@ -3,10 +3,10 @@
 This is the code repo for TACL 2020 paper [Improving Candidate Generation for Low-resource Cross-lingual Entity Linking](https://arxiv.org/abs/2003.01343)
 
 ## Training
-Please refer to train.sh for the arguments, all four models (charagram, charcnn, lstm-last and lstm-avg) could be launched in this bash file
+Please refer to [train.sh](https://github.com/shuyanzhou/pbel_plus/blob/master/train.sh) for the arguments, all four models (charagram, charcnn, lstm-last and lstm-avg) could be launched in this bash file
 
 ## Test
-Please refer to test.sh for the arguments, all four models (charagram, charcnn, lstm-last and lstm-avg) could be launched in this bash file
+Please refer to [test.sh](https://github.com/shuyanzhou/pbel_plus/blob/master/test.sh) for the arguments, all four models (charagram, charcnn, lstm-last and lstm-avg) could be launched in this bash file
 
 ## Data
 Data folder contains ``data`` ``alias`` and ``kb``
@@ -32,9 +32,13 @@ Note that all files ended with .ipa are of *phoneme* representations, using [Epi
 under the models folder, we have:
 
 ``base_train``: the base class for training 
+
 ``base_test``: the base class for testing
+
 ``charagram``: character n-gram model, used in our work
+
 ``charcnn``: character CNN, used as baseline
+
 ``lstm``: used as baseline
 
 ## Utils
