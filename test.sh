@@ -1,9 +1,10 @@
-DATA="./data"
+DATA=./data
 TRAIN_LANG=""
 TEST_LANG="" # test language
 FORM="" # .ipa or blank
-ALIAS_FILE=${DATA}/alias/${ALIAS_FILE}${FORM}
+ALIAS_FILE=${DATA}/alias/alias.en${FORM}
 KB_FILE=${DATA}/kb/en_kb${FORM}
+
 
 python main.py \
               --model charagram \
@@ -15,6 +16,8 @@ python main.py \
               --alia_file ${ALIAS_FILE} \
               --method "pivoting"\
               --test_epoch "best" \
+              --map_file ${DATA}/c2i_map/en-${TRAIN_LANG}_charagram \
+              --model_path ${DATA}/models/en-${TRAIN_LANG}_charagram \
               --kb_file ${KB_FILE} \
               --test_file ${DATA}/data/me_test_en-${TEST_LANG}_links${FORM}\
               --no_pivot_result ${DATA}/results/en-${TRAIN_LANG}_${TEST_LANG}_base.result${FORM} \
@@ -39,6 +42,8 @@ python main.py \
               --test_epoch "best" \
               --kb_file ${KB_FILE} \
               --test_file ${DATA}/data/me_test_en-${TEST_LANG}_links${FORM}\
+              --map_file ${DATA}/c2i_map/en-${TRAIN_LANG}_charcnn \
+              --model_path ${DATA}/models/en-${TRAIN_LANG}_charcnn \
               --no_pivot_result ${DATA}/results/en-${TRAIN_LANG}_${TEST_LANG}_base.result${FORM} \
               --pivot_file ${DATA}/data/en-${TRAIN_LANG}_links${FORM} \
               --pivot_result ${DATA}/results/en-${TRAIN_LANG}_${TEST_LANG}_pivot.result${FORM} \
@@ -63,6 +68,8 @@ python main.py \
               --test_epoch "best" \
               --kb_file ${KB_FILE} \
               --test_file ${DATA}/data/me_test_en-${TEST_LANG}_links${FORM}\
+              --map_file ${DATA}/c2i_map/en-${TRAIN_LANG}_${TYPE} \
+              --model_path ${DATA}/models/en-${TRAIN_LANG}_${TYPE} \
               --no_pivot_result ${DATA}/results/en-${TRAIN_LANG}_${TEST_LANG}_base.result${FORM} \
               --pivot_file ${DATA}/data/en-${TRAIN_LANG}_links${FORM} \
               --pivot_result ${DATA}/results/en-${TRAIN_LANG}_${TEST_LANG}_pivot.result${FORM} \

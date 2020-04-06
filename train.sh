@@ -1,7 +1,7 @@
 DATA=./data
 TRAIN_LANG="" # pivoting language
 FORM="" # .ipa or blank
-ALIAS_FILE=${DATA}/alias/${ALIAS_FILE}${FORM}
+ALIAS_FILE=${DATA}/alias/alias.en${FORM}
 
 # charagram
 python main.py \
@@ -32,8 +32,8 @@ python main.py \
             --alia_file ${ALIAS_FILE} \
             --train_file ${DATA}/data/ee-me_train_en-${TRAIN_LANG}_links${FORM}\
             --dev_file ${DATA}/data/me_val_en-${TRAIN_LANG}_links${FORM}\
-            --map_file ${DATA}/c2i_map/en-${TRAIN_LANG}_charagram \
-            --model_path ${DATA}/models/en-${TRAIN_LANG}_charagram \
+            --map_file ${DATA}/c2i_map/en-${TRAIN_LANG}_charcnn \
+            --model_path ${DATA}/models/en-${TRAIN_LANG}_charcnn \
             --similarity_measure "cosine" \
             --objective "hinge"\
             --learning_rate 1e-3 \
@@ -52,8 +52,8 @@ python main.py \
             --alia_file ${ALIAS_FILE} \
             --train_file ${DATA}/data/ee-me_train_en-${TRAIN_LANG}_links${FORM}\
             --dev_file ${DATA}/data/me_val_en-${TRAIN_LANG}_links${FORM}\
-            --map_file ${DATA}/c2i_map/en-${TRAIN_LANG}_charagram \
-            --model_path ${DATA}/models/en-${TRAIN_LANG}_charagram \
+            --map_file ${DATA}/c2i_map/en-${TRAIN_LANG}_${TYPE} \
+            --model_path ${DATA}/models/en-${TRAIN_LANG}_${TYPE} \
             --similarity_measure "cosine" \
             --objective "hinge"\
             --learning_rate 1e-3 \

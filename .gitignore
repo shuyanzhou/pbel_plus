@@ -9,3 +9,6 @@ __pycache__/
 debug_data/
 .idea/
 *.pyc
+data/data
+data/kb
+data/alias

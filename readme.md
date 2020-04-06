@@ -37,6 +37,11 @@ under the models folder, we have:
 ``charcnn``: character CNN, used as baseline
 ``lstm``: used as baseline
 
+## Utils
+``to_ipa.py``: code for generating the phoneme representation of strings. 
+## TODO
+* Trained models
+* Code to extract data from Wikipedia for any language
 ## Reference
 ```
 @article{zhou20tacl,
