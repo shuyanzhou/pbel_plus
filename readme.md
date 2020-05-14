@@ -45,7 +45,8 @@ under the models folder, we have:
 ``to_ipa.py``: code for generating the phoneme representation of strings. 
 ## TODO
 * Trained models
-* Code to extract data from Wikipedia for any language
+* Code to extract data from Wikipedia for any language and specify train/dev/test split
+* Code to calculate n-gram
 ## Reference
 ```
 @article{zhou20tacl,
