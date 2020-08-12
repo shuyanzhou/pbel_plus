@@ -1,7 +1,7 @@
 # Data
 
 ## Download
-Please download the full data from this [link](https://drive.google.com/file/d/1Uh80mAWeuczNwC-bDbSnpbCSAofIAsii/view?usp=sharing)
+Please download the full data from this [link](https://drive.google.com/drive/folders/1FGi5ipP7qr72OAA9O8jUT9OMmc7h50EX?usp=sharing)
 
 Note that for the test data, we only release the data we crawl from Wikipedia.
 ## Data
