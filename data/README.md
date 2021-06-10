@@ -11,7 +11,7 @@ Data folder contains ``data`` ``alias`` and ``kb``
 English_Wikipedia_ID ||| English_Wikipedia_title ||| Wikipedia_title_of_train/test_lang ||| Entity_type
 e.g. 3378263 ||| John Michael Talbot ||| ጆን ማይክል ታልበት ||| PER
 ```
-Besides the languages to used for training and evaluation, we also provide a collection of the processed data for 64 languages (64_lang_processed.tar.gz). We use ISO 639-2 language code to represent each language.
+Besides the languages used for training and evaluation in our paper, we also provide a collection of the processed data for 64 languages (64_lang_processed.tar.gz). We use ISO 639-2 language code to represent each language.
 #### ``alias``: entity alias from Wikidata
 ```
 Wikidata_ID ||| English_Wikipedia_ID ||| aliases
